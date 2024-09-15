@@ -19,7 +19,7 @@ def perceptron_step(w, inputs, label, eta):
     output = step(w, inputs)
 
     if output != label:
-        w = w + eta * inputs.reshape(-1, 1) * (label - output)
+        w += eta * inputs.reshape(-1, 1) * (label - output)
 
     return w, output # return the updated weights
 
@@ -36,23 +36,23 @@ w2 = np.random.uniform(-1,1)
 
 # create the weights vector
 
-w = np.array([w0, w1, w2]).reshape(3,1)
-
+w_star = np.array([w0, w1, w2]).reshape(3,1)
+print(f"True Weights: {w_star} ")
 # ========= Point (1b) ========= #
 # --------- generation of samples and labels---------
 
 # samples
 
 x = np.random.uniform(-1,1, size = (100, 2))
-x0 = np.ones((100, 1))
+x0 = np.ones((100,1))
 X = np.hstack((x0, x)) 
 
-
+print(f'The Inputs shape is: {X.shape}')
 # labels
 
 labels = []
 for i in range(X.shape[0]):
-    y = step(w, X[i])
+    y = step(w_star, X[i])
     labels.append(y)
 
 # transform labels into an array
@@ -74,7 +74,7 @@ for i in range(X.shape[0]):
 # create the decision boundary line with the initial weights
 
 x1_array = np.array(x1_list)
-x2_array_0 = -(w[0] + w[1] * x1_array) / w[2] 
+x2_array_0 = -(w_star[0] + w_star[1] * x1_array) / w_star[2] 
 
 # create the scatterplot
 
@@ -90,12 +90,12 @@ plt.ylabel(r'$x_{2}$')
 # ========== Point (1c) ========= #
 # --------- Find the normal vector to the line ---------
 
-print(type(-w[2].item())) # to extract a float element from the array
+print(type(-w_star[2].item())) # to extract a float element from the array
 
 # define a vector tangent to the line
 
-v_tangent = np.array([-w[2].item(), w[1].item()])
-v_normal = np.array([w[1].item(), w[2].item()])
+v_tangent = np.array([-w_star[2].item(), w_star[1].item()])
+v_normal = np.array([w_star[1].item(), w_star[2].item()])
 
 prod = np.dot(v_normal, v_tangent)
 print(prod) # verify the the scalar product is 0!
@@ -104,11 +104,11 @@ print(prod) # verify the the scalar product is 0!
 
 # define line parameters
 
-a = -w[1].item() / w[2].item()
+a = -w_star[1].item() / w_star[2].item()
 #a = -w[1]/w[2]
 print(type(a))
 b = -1
-c = -w[0].item() / w[2].item()
+c = -w_star[0].item() / w_star[2].item()
 
 # define the point of interest 
 
@@ -122,7 +122,8 @@ d = np.abs(a*xp + b*yp + c) / math.sqrt(math.pow(a,2) + math.pow(b, 2))
 
 outputs = []
 
-w_init = np.array([1, 1, 1]).reshape(3,1)
+w_init = np.array([1, 1, 1]).reshape(3,1).astype(np.float64)
+
 flag = 1 # flag to stop the algorithm when there are no more errors
 eta = 1
 errors_epoch_list = []
@@ -133,7 +134,9 @@ while(flag):
     errors_epoch = 0 # reset errors of the current epocj
     epochs += 1
     for i in range(X.shape[0]):
-        w_update, output = perceptron_step(w_init, X[i], labels[i], eta)
+        #print(f'Analizing data {i}')
+    
+        w_update, output = perceptron_step(w_init, (X[i]), (labels[i]), eta)
         outputs.append(output)
         if output != labels[i]:
             # an error was committed
@@ -144,6 +147,10 @@ while(flag):
     if errors_epoch == 0:
         # no errors were committed in the entire epoch --> stop the algorithm
         flag = 0
+print('==================== Point 2a =====================')
+print(f'Loop of point ended in {epochs} epochs ')
+print(f'The final weights are :\n{w_update.ravel()}')
+print(f'The initial weights were :\n{w_star.ravel()}')
 
 # --------- Visualize Results ---------
 
@@ -174,7 +181,7 @@ errors_per_eta = {} # create a dictionary to store the different number of error
 outputs = []
 
 for eta in etas:
-    w_init = np.array([1, 1, 1]).reshape(3,1)
+    w_init = np.array([1, 1, 1]).reshape(3,1).astype(np.float64)
     flag = 1 # flag to stop the algorithm when there are no more errors
 
     errors_epoch_list = []
@@ -199,9 +206,12 @@ for eta in etas:
             flag = 0
     errors_per_eta[eta] = errors_epoch_list
 
-print(f'Loop ended in {epochs} epochs ')
-print(f'The final weights are :\n{w_update.ravel()}')
-print(f'The initial weights were :\n{w.ravel()}')
+    print('==================== Point 2b =====================')
+    print(f'Loop ended in {epochs} epochs with eta = {eta}')
+    print(f'The final weights are :\n{w_update.ravel()}')
+    print(f'The initial weights were :\n{w_star.ravel()}')
+
+
 
 
 
@@ -228,26 +238,73 @@ X = np.hstack((x0, x))
 
 labels = []
 for i in range(X.shape[0]):
-    y = step(w, X[i])
-    labels.append(y)
+    y = step(w_star, X[i])
+    labels.append(y) # these are the true labels
 
 # transform labels into an array
 
 labels = np.array(labels)
 
-w_init = np.array([1,1,1]).reshape(3,1)
+# initialize weights
+
+w_init = np.array([1,1,1]).reshape(3,1).astype(np.float64) 
 flag = 1
 eta = 1
 errors_epoch = 0
+errors_per_epoch_list = []
+epochs = 0
 while flag:
     errors_epoch = 0 # initialize errors for this epoch
     for i in range(X.shape[0]):
+        #print(f'Analizing data {i}\n')
         w_update, output = perceptron_step(w_init, X[i], labels[i], eta)
         if output != labels[i]:
             errors_epoch += 1
     # end of epoch
+    epochs += 1
+    errors_epoch_list.append(errors_epoch)
     if errors_epoch == 0:
         flag = 0
+print('==================== Point 2c =====================')
+print(f"The true weights are: {w_star.ravel()}")
+print(f"The updated weights are {w_update.ravel()} and were obtained after {epochs} epochs")
 
-print(f"The fixed weights are: {w.ravel()}")
-print(f"The updated weights are {w_update.ravel()}")
+# ========= Point (2d) ======== #
+etas = [1,  0.1, 10] # regularization param
+errors_per_eta = {} # create a dictionary to store the different number of errors per each learning rate
+outputs = []
+
+for eta in etas:
+
+    # for each eta initialize weights 100 times
+
+    for k in range(100): 
+        w_init = np.random.uniform(-1,1, size =(3,1)).astype(np.float64)
+        flag = 1 # flag to stop the algorithm when there are no more errors
+
+        errors_epoch_list = []
+    
+        epochs = 0
+
+        while(flag):
+            errors_epoch = 0 # reset errors of the current epocj
+            epochs += 1
+            for i in range(X.shape[0]):
+                w_update, output = perceptron_step(w_init, X[i], labels[i], eta)
+                outputs.append(output)
+                if output != labels[i]:
+                    # an error was committed
+                    errors_epoch += 1
+                    w_init = w_update
+
+            # end of epoch
+            errors_epoch_list.append(errors_epoch)
+            if errors_epoch == 0:
+                # no errors were committed in the entire epoch --> stop the algorithm
+                flag = 0
+        errors_per_eta[eta] = errors_epoch_list
+
+        print(f'==================== Point 2d - round {k} =====================')
+        print(f'Loop ended in {epochs} epochs with eta = {eta}')
+        print(f'The final weights are :\n{w_update.ravel()}')
+        print(f'The initial weights were :\n{w_star.ravel()}')
