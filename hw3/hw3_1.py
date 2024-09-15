@@ -189,7 +189,7 @@ for eta in etas:
             outputs.append(output)
             if output != labels[i]:
                 # an error was committed
-                errors_epoch += 1--------- 
+                errors_epoch += 1
                 w_init = w_update
 
         # end of epoch
@@ -200,8 +200,8 @@ for eta in etas:
     errors_per_eta[eta] = errors_epoch_list
 
 print(f'Loop ended in {epochs} epochs ')
-print(f'The final weights are :\n{w_update[0]}\n{w_update[1]}\n{w_update[2]}')
-print(f'The initial weights were :\n{w[0]}\n{w[1]}\n{w[2]}')
+print(f'The final weights are :\n{w_update.ravel()}')
+print(f'The initial weights were :\n{w.ravel()}')
 
 
 
@@ -220,3 +220,34 @@ plt.tight_layout(rect=[0, 0, 1, 0.95])  # Adjust the layout to fit the suptitle
 plt.show()
 
 # ========= Point (2c) ========= #
+x = np.random.uniform(-1,1, size = (1000,2))
+x0 = np.ones((1000,1))
+X = np.hstack((x0, x)) 
+
+# labels
+
+labels = []
+for i in range(X.shape[0]):
+    y = step(w, X[i])
+    labels.append(y)
+
+# transform labels into an array
+
+labels = np.array(labels)
+
+w_init = np.array([1,1,1]).reshape(3,1)
+flag = 1
+eta = 1
+errors_epoch = 0
+while flag:
+    errors_epoch = 0 # initialize errors for this epoch
+    for i in range(X.shape[0]):
+        w_update, output = perceptron_step(w_init, X[i], labels[i], eta)
+        if output != labels[i]:
+            errors_epoch += 1
+    # end of epoch
+    if errors_epoch == 0:
+        flag = 0
+
+print(f"The fixed weights are: {w.ravel()}")
+print(f"The updated weights are {w_update.ravel()}")
