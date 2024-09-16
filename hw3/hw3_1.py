@@ -4,6 +4,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import math
 
+# Select a random seed for reproducible results
+
+np.random.seed(42)
+
 # ========= Definition of useful functions ========= #
 
 def step(w, inputs):
@@ -123,24 +127,30 @@ for i in range(X.shape[0]):
 
 # create the decision boundary line with the initial weights
 
-x1_array = np.array(x1_list)
+#x1_array = np.array(x1_list)
+x1_array = X[:,1]
 x2_array_0 = -(w_star[0] + w_star[1] * x1_array) / w_star[2] 
-
+x1_mid = np.median(x1_array)  # Punto medio di x1
+x2_mid = -(w_star[0] + w_star[1] * x1_mid) / w_star[2]  
 # create the scatterplot
 
 plt.figure(figsize = (10, 10))
-plt.scatter(x1_list, x2_list, c = colors)
+plt.scatter(X[:,1][labels == 1], X[:,2][labels == 1], color = 'red', label = 'Label = 1')
+plt.scatter(X[:,1][labels == 0], X[:,2][labels == 0], color = 'blue', label = 'Label = 0')
 plt.plot(x1_array, x2_array_0, linewidth=1.5, color='forestgreen', label='Decision Boundary')
-plt.title('Scatterplot with randomly initialized weights')
+plt.title('Scatterplot with randomly initialized weights', fontsize = 18)
 plt.xlabel(r'$x_{1}$')
 plt.ylabel(r'$x_{2}$')
+plt.xlim(-1,1)
+plt.ylim(-1,1)
+#plt.axis('equal')
+plt.legend(loc = 'lower right')
+plt.grid(True)
 #plt.show()
 #plt.savefig('initial_scatterplot.png') # save figure
 
 # ========== Point (1c) ========= #
 # --------- Find the normal vector to the line ---------
-
-print(type(-w_star[2].item())) # to extract a float element from the array
 
 # define a vector tangent to the line
 
@@ -149,6 +159,25 @@ v_normal = np.array([w_star[1].item(), w_star[2].item()])
 
 prod = np.dot(v_normal, v_tangent)
 print(prod) # verify the the scalar product is 0!
+
+# Show graphically that they are perpendicular
+
+plt.figure(figsize = (10, 10))
+plt.scatter(X[:,1][labels == 1], X[:,2][labels == 1], color = 'red', label = 'Label = 1')
+plt.scatter(X[:,1][labels == 0], X[:,2][labels == 0], color = 'blue', label = 'Label = 0')
+plt.plot(x1_array, x2_array_0, linewidth=1.5, color='forestgreen', label='Decision Boundary')
+plt.quiver(x1_mid, x2_mid, w_star[1], w_star[2], angles='xy', scale_units='xy', scale=1, color='purple', linewidth=2.5, label=r'$w_{star}$')
+plt.title('Scatterplot with randomly initialized weights', fontsize = 18)
+plt.xlabel(r'$x_{1}$')
+plt.ylabel(r'$x_{2}$')
+plt.xlim(-1,1)
+plt.ylim(-1,1)
+#plt.axis('equal')
+plt.legend(loc = 'lower right')
+plt.grid(True)
+#plt.show()
+#plt.savefig('initial_scatterplot.png') # save figure
+
 
 # --------- Compute the distance between the point and the line ---------
 
@@ -212,16 +241,17 @@ x2_array_1 = -(w_update[0] + w_update[1] * x1_array) / w_update[2]
 # create the scatterplot
 
 plt.figure(figsize = (10, 10))
-plt.subplot(2,1,1)
-plt.scatter(x1_list, x2_list, c = colors)
-plt.plot(x1_array, x2_array_1, linewidth=1.5, color='forestgreen', label='Decision Boundary')
-plt.title('Scatterplot with the computed weights')
-plt.subplot(2,1,2)
-plt.plot(x1_array, x2_array_0, linewidth=1.5, color='purple', label='Decision Boundary')
-plt.scatter(x1_list, x2_list, c = colors)
-plt.title('Scatterplot with randomly initialized weights')
+plt.scatter(X[:,1][labels == 1], X[:,2][labels == 1], color = 'red', label = 'Label = 1')
+plt.scatter(X[:,1][labels == 0], X[:,2][labels == 0], color = 'blue', label = 'Label = 0')
+plt.plot(x1_array, x2_array_1, linewidth=1.5, color='forestgreen', label=' Trained weights')
+plt.plot(x1_array, x2_array_0, linewidth=1.5, color='orange', label='True weights')
+plt.title('Scatterplot with the computed weights vs randomly initialized weights')
 plt.xlabel(r'$x_{1}$')
 plt.ylabel(r'$x_{2}$')
+plt.xlim(-1,1)
+plt.ylim(-1,1)
+plt.legend(loc = 'lower right')
+plt.grid(True)
 #plt.show()
 
 # ========= Point (2b) ========= #
@@ -274,8 +304,10 @@ for i, eta in enumerate(etas, 1):
     plt.xlabel('Epochs')
     plt.ylabel('Errors')
     plt.legend()
+    plt.legend(loc = 'lower right')
+    plt.grid(True)
 
-plt.suptitle('Errors per Epoch for Different Learning Rates', fontsize=16)
+plt.suptitle('Errors per Epoch for Different Learning Rates', fontsize=24)
 plt.tight_layout(rect=[0, 0, 1, 0.95])  # Adjust the layout to fit the suptitle
 plt.show()
 
@@ -318,6 +350,26 @@ while flag:
 print('==================== Point 2c =====================')
 print(f"The true weights are: {w_star.ravel()}")
 print(f"The updated weights are {w_update.ravel()} and were obtained after {epochs} epochs")
+
+# --------- Plot Results --------- #
+
+# create the decision boundary
+x2_array_2 = -(w_update[0] + w_update[1] * x1_array) / w_update[2] 
+
+plt.figure(figsize = (10, 10))
+plt.scatter(X[:,1][labels == 1], X[:,2][labels == 1], color = 'red', label = 'Label = 1')
+plt.scatter(X[:,1][labels == 0], X[:,2][labels == 0], color = 'blue', label = 'Label = 0')
+plt.plot(x1_array, x2_array_2, linewidth=1.5, color='purple', label='Trained weights 1000 samples')
+plt.plot(x1_array, x2_array_0, linewidth=1.5, color='orange', label='True Weights')
+plt.plot(x1_array, x2_array_1, linewidth=1.5, color='forestgreen', label='Trained weights 100 samples')
+plt.title('Scatterplot with the computed weights vs randomly initialized weights')
+plt.xlabel(r'$x_{1}$')
+plt.ylabel(r'$x_{2}$')
+plt.xlim(-1,1)
+plt.ylim(-1,1)
+plt.legend(loc = 'lower right')
+plt.grid(True)
+plt.show()
 
 # ========= Point (2d) ======== #
 etas = [1,  0.1, 10] # regularization param
@@ -363,7 +415,7 @@ for eta in etas:
         # upgrade the dictionary
         errors[eta][k] = errors_epoch_list
 
-        print(f'==================== Point 2d - eta {eta} - round {k} =====================')
+        print(f'==================== Point 2d - $\\eta$ {eta} - round {k} =====================')
         print(f'Loop ended in {epochs} epochs with eta = {eta}')
         print(f'The final weights are :\n{w_update.ravel()}')
         print(f'The initial weights were :\n{w_star.ravel()}')
@@ -376,16 +428,18 @@ for idx, eta in enumerate(etas):
     avg_errors, p10, p90 = compute_statistics(errors[eta])
     
     # Plot average errors
-    axes[idx].plot(avg_errors, label=f'Average errors (eta={eta})', color='blue')
     
     # Plot percentile range as shaded area
     axes[idx].fill_between(range(len(avg_errors)), p10, p90, color='blue', alpha=0.2, label="10th-90th percentile")
     
     # Set plot labels and title
-    axes[idx].set_title(f'Average Errors per Epoch (eta={eta})')
+    axes[idx].set_title(f'Average Errors per Epoch ($\\eta$={eta})')
     axes[idx].set_xlabel('Epoch')
     axes[idx].set_ylabel('Number of Errors')
-    axes[idx].legend()
+    axes[idx].legend(loc = 'lower right')
+
+    
+    axes[idx].grid(True)
 
 plt.tight_layout()
 plt.show()
