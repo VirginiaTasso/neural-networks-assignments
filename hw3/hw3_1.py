@@ -2,17 +2,37 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
-import pandas as pd
 import math
 
 # ========= Definition of useful functions ========= #
+
 def step(w, inputs):
+    """
+    Implements the step function on the current weights and input features.
+
+    :param w: Weight vector, a numpy array of shape (3,1) corresponding to the weights for the features.
+    :param inputs: Input feature vector, typically of length 3.
+
+    :returns: A binary output (:py:class:`~int`), 1 if the weighted sum is greater than or equal to 0, 
+              otherwise 0.
+    """
     x0, x1, x2 = inputs
     f = w[0]*x0 + w[1]*x1 + w[2]*x2
     if f >= 0: return 1
     else: return 0
 
 def perceptron_step(w, inputs, label, eta):
+    """
+    Performs a single update step of the perceptron algorithm.
+
+    :param w: Current weight vector, a numpy array.
+    :param inputs: Input feature vector for a data point, a numpy array.
+    :param label: Actual label of the data point, typically 1 or -1.
+    :param eta: Learning rate, controlling the step size in weight updates.
+
+    :returns: A tuple containing the updated weight vector (:py:class:`~numpy.ndarray`)
+              and the perceptron prediction (:py:class:`~int`) made before the update.
+    """
     # function to implement the single step of the perceptron algorithm
     # compute outputs
 
@@ -22,8 +42,18 @@ def perceptron_step(w, inputs, label, eta):
         w += eta * inputs.reshape(-1, 1) * (label - output)
 
     return w, output # return the updated weights
-
+  
 def compute_statistics(errors):
+    """
+    Compute the average of errors for different runs
+    :param errors: dictionary in which each key represents a run, and each value is a list 
+                   of the number of errors per epoch for that run.
+    
+    :returns: 
+        - avg_errors: a numpy array containing the average of error per epoch among the different runs
+        - percentiles_10: numpy array containing the 10th percentile of error per epoch among the different runs
+        - percentiles_90: numpy array containing the 90th percentile of errors per epoch amont the different runs
+    """
     max_epochs = max([len(epoch_list) for epoch_list in errors.values()])
 
     # Initialize arrays to store average errors and percentiles
@@ -37,7 +67,7 @@ def compute_statistics(errors):
             if epoch < len(errors[k]):
                 epoch_errors.append(errors[k][epoch])
             else:
-                # If some runs stopped earlier, append last error count to maintain alignment
+                # Not all runs have the same number of epochs--> if some run stops earlier, append zeros to have coherent lengths
                 epoch_errors.append(0)
         
         # Compute average and percentiles
@@ -46,9 +76,6 @@ def compute_statistics(errors):
         percentiles_90[epoch] = np.percentile(epoch_errors, 90)
     
     return avg_errors, percentiles_10, percentiles_90
-
-    
-
 
 # ========= Point (1a) ========= #
 # --------- random initialization of weights ---------
@@ -341,30 +368,7 @@ for eta in etas:
         print(f'The final weights are :\n{w_update.ravel()}')
         print(f'The initial weights were :\n{w_star.ravel()}')
 
-# --------- check dict structure ---------
-
-# iterate over different etas
-for eta in errors:
-    print(f'=== eta: {eta} ===')
-    
-    # Iterate over all the initializations
-    for k in errors[eta]:
-        
-        errors_epoch_list = errors[eta][k]
-        
-        # Number of epochs for that initialization
-        print(f'--------- Weights initialization n° {k}---------')
-        print(f'  - Number of epochs: {len(errors_epoch_list)}')
-        
-        # errors for each epoch
-        print(f'  - Errors list for each epoch: {errors_epoch_list}')
-        
-
-    print('--- Fine di eta ---\n')
-
-print(f'Errors[eta] is: {type(errors[eta])}')
-
-# Plotting
+# --------- Plot of the average of errors --------- #
 
 fig, axes = plt.subplots(1, 3, figsize=(18, 6))
 
