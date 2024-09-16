@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import math
 
-# --------- Definition of useful functions ---------
+# ========= Definition of useful functions ========= #
 def step(w, inputs):
     x0, x1, x2 = inputs
     f = w[0]*x0 + w[1]*x1 + w[2]*x2
@@ -23,7 +23,30 @@ def perceptron_step(w, inputs, label, eta):
 
     return w, output # return the updated weights
 
-#def visualize_results()
+def compute_statistics(errors):
+    max_epochs = max([len(epoch_list) for epoch_list in errors.values()])
+
+    # Initialize arrays to store average errors and percentiles
+    avg_errors = np.zeros(max_epochs)
+    percentiles_10 = np.zeros(max_epochs)
+    percentiles_90 = np.zeros(max_epochs)
+    
+    for epoch in range(max_epochs):
+        epoch_errors = []
+        for k in errors:
+            if epoch < len(errors[k]):
+                epoch_errors.append(errors[k][epoch])
+            else:
+                # If some runs stopped earlier, append last error count to maintain alignment
+                epoch_errors.append(0)
+        
+        # Compute average and percentiles
+        avg_errors[epoch] = np.mean(epoch_errors)
+        percentiles_10[epoch] = np.percentile(epoch_errors, 10)
+        percentiles_90[epoch] = np.percentile(epoch_errors, 90)
+    
+    return avg_errors, percentiles_10, percentiles_90
+
     
 
 
@@ -274,11 +297,17 @@ etas = [1,  0.1, 10] # regularization param
 errors_per_eta = {} # create a dictionary to store the different number of errors per each learning rate
 outputs = []
 
+# create a dictionary to store all the errors
+errors = {}
+
 for eta in etas:
+    # create a subdictionary
+    errors[eta] = {}
 
     # for each eta initialize weights 100 times
-
     for k in range(100): 
+        # a list to store the errors of all epochs for that initialization
+        errors[eta][k] = []
         w_init = np.random.uniform(-1,1, size =(3,1)).astype(np.float64)
         flag = 1 # flag to stop the algorithm when there are no more errors
 
@@ -297,14 +326,62 @@ for eta in etas:
                     errors_epoch += 1
                     w_init = w_update
 
-            # end of epoch
+            # end of epoch --> store all the errors
             errors_epoch_list.append(errors_epoch)
+            
             if errors_epoch == 0:
                 # no errors were committed in the entire epoch --> stop the algorithm
                 flag = 0
-        errors_per_eta[eta] = errors_epoch_list
 
-        print(f'==================== Point 2d - round {k} =====================')
+        # upgrade the dictionary
+        errors[eta][k] = errors_epoch_list
+
+        print(f'==================== Point 2d - eta {eta} - round {k} =====================')
         print(f'Loop ended in {epochs} epochs with eta = {eta}')
         print(f'The final weights are :\n{w_update.ravel()}')
         print(f'The initial weights were :\n{w_star.ravel()}')
+
+# --------- check dict structure ---------
+
+# iterate over different etas
+for eta in errors:
+    print(f'=== eta: {eta} ===')
+    
+    # Iterate over all the initializations
+    for k in errors[eta]:
+        
+        errors_epoch_list = errors[eta][k]
+        
+        # Number of epochs for that initialization
+        print(f'--------- Weights initialization n° {k}---------')
+        print(f'  - Number of epochs: {len(errors_epoch_list)}')
+        
+        # errors for each epoch
+        print(f'  - Errors list for each epoch: {errors_epoch_list}')
+        
+
+    print('--- Fine di eta ---\n')
+
+print(f'Errors[eta] is: {type(errors[eta])}')
+
+# Plotting
+
+fig, axes = plt.subplots(1, 3, figsize=(18, 6))
+
+for idx, eta in enumerate(etas):
+    avg_errors, p10, p90 = compute_statistics(errors[eta])
+    
+    # Plot average errors
+    axes[idx].plot(avg_errors, label=f'Average errors (eta={eta})', color='blue')
+    
+    # Plot percentile range as shaded area
+    axes[idx].fill_between(range(len(avg_errors)), p10, p90, color='blue', alpha=0.2, label="10th-90th percentile")
+    
+    # Set plot labels and title
+    axes[idx].set_title(f'Average Errors per Epoch (eta={eta})')
+    axes[idx].set_xlabel('Epoch')
+    axes[idx].set_ylabel('Number of Errors')
+    axes[idx].legend()
+
+plt.tight_layout()
+plt.show()
