@@ -429,14 +429,13 @@ for idx, eta in enumerate(etas):
     
     # Plot average errors
     
-    # Plot percentile range as shaded area
+ 
     axes[idx].fill_between(range(len(avg_errors)), p10, p90, color='blue', alpha=0.2, label="10th-90th percentile")
     
-    # Set plot labels and title
-    axes[idx].set_title(f'Average Errors per Epoch ($\\eta$={eta})')
-    axes[idx].set_xlabel('Epoch')
-    axes[idx].set_ylabel('Number of Errors')
-    axes[idx].legend(loc = 'lower right')
+    axes[idx].set_title(f'Average Errors per Epoch ($\\eta$={eta})', fontsize = 23)
+    axes[idx].set_xlabel('Epoch', fontsize = 23)
+    axes[idx].set_ylabel('Number of Errors', fontsize = 23)
+    axes[idx].legend(loc = 'lower right', fontsize = 18)
 
     
     axes[idx].grid(True)
