@@ -3,6 +3,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.datasets import fetch_openml
+from sklearn.preprocessing import OneHotEncoder
 import pandas as pd
 import time
 
@@ -17,10 +18,16 @@ mnist = fetch_openml('MNIST_784')
 images = {}
 j = 0
 
+# define xrow and yrow vectors
+
+xrows = []
+yrows = []
+
 for j in range(len(mnist.data)):
     img = []
     # select a single row of data
     xrow = mnist.data.loc[j]
+    xrows.append(xrow)
 
     for i, element in enumerate(xrow):
         #print(element)
@@ -33,6 +40,7 @@ for j in range(len(mnist.data)):
 
     # select the corresponding label
     label = mnist.target[j]
+    yrows.append(label)
 
     print(f"==== Created image n° {j} ====")
 
@@ -48,6 +56,9 @@ for j in range(len(mnist.data)):
 
     j += 1
 
+xrows = np.array(xrows) # (70000, 784)
+yrows = np.array(yrows) # (70000, )
+
 
 # sort keys because they are in random order
 myKeys = list(images.keys())
@@ -62,6 +73,7 @@ for key in sorted_images.keys():
     labels.append(key)
     img_examples.append(sorted_images[key][0])
 
+print(f'Variable type: {type(labels[0])}')
 
 # Plot images
 
@@ -73,6 +85,58 @@ for ax, img, label in zip(axes.ravel(), img_examples, labels):
     ax.set_title(f"Digit {label}")
 
 plt.show()
+
+
+# ========= Point b ========= #
+# --------- Define the random feature extractor ---------
+
+d = 50
+M = np.random.uniform(0, 1, size = (d, 784))
+M /= (d*255)
+print(M)
+
+# --------- Create X_matrix ---------- #
+
+X_matrix = []
+# iterate over rows
+
+for row in range(xrows.shape[0]):
+
+    # select one row
+    xrow = xrows[row, :]
+    tmp = np.transpose(xrow)
+    prod = np.matmul(M, np.transpose(xrow))
+    X_matrix.append(prod)
+
+X_matrix = np.array(X_matrix)
+print("==== yrows ====")
+print(yrows[0:5,])
+
+
+# --------- Create Y_Matrix --------- #
+labels_enc = [[int(label)] for label in labels] 
+
+
+enc = OneHotEncoder(handle_unknown='ignore')
+enc.fit(labels_enc)
+
+
+encoded_labels = enc.transform(labels_enc).toarray()
+
+Y_matrix = []
+for row in range(len(yrows)): # 70000
+    value = yrows[row]
+    for i in range(len(labels_enc)):  
+        #print('Value: ', value)
+        #print('Label: ', labels_enc[i][0])     
+        if int(value) == labels_enc[i][0]:
+            lbl = encoded_labels[i]
+            Y_matrix.append(lbl)
+
+Y_matrix = np.array(Y_matrix).reshape(10, 70000)
+
+
+
 
 
 
@@ -87,6 +151,9 @@ https://stackoverflow.com/questions/47324921/cant-load-mnist-original-dataset-us
 https://www.geeksforgeeks.org/accessing-elements-of-a-pandas-series/
 
 https://www.geeksforgeeks.org/python-sort-python-dictionaries-by-key-or-value/
+
+
+https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.OneHotEncoder.html
 
 '''
 
