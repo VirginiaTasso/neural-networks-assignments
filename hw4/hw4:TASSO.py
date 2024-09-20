@@ -6,20 +6,14 @@ from sklearn.datasets import fetch_openml
 import pandas as pd
 import time
 
-# --------- Load the full Dataset ---------
+# ========= Point a ========= #
+# --------- Format correcly data and create images --------- #
+#  Load the full Dataset 
 mnist = fetch_openml('MNIST_784')
-print(mnist.keys())
-print(type(mnist.data))  # pandas.core.DataFrame
-print(type(mnist.target)) # pandas.series.Series
-print(len(mnist.target))
-#print("printing shapes")
-#print(f"Shape of the image dataset {mnist.data.shape}") # (70000, 784)
-#print(f"Labels shape {mnist.target.shape}") # (70000, )
-print(mnist.data.loc[0])
-print(mnist.target[0])
 
-# reshape images
-#print((mnist.data.head()))
+# Iterate over data to collect all pixels together to form each image
+# store them in a python dictionary with the corresponding label
+
 images = {}
 j = 0
 
@@ -33,12 +27,14 @@ for j in range(len(mnist.data)):
         img.append(element) # form the image
 
     # once finished, transform into array and reshape
-    print(f"Image shape")
+    
     img = np.array(img).reshape(28,28)
-    print(img.shape) # (28, 28)
+    #print(img.shape) # (28, 28)
 
     # select the corresponding label
     label = mnist.target[j]
+
+    print(f"==== Created image n° {j} ====")
 
     # update dictionary
 
@@ -58,21 +54,13 @@ myKeys = list(images.keys())
 myKeys.sort()
 sorted_images = {i: images[i] for i in myKeys}
 
-print(len(images)) # 10, because 10 keys
-print(len(images['0']))
-print(sorted_images.keys())
-
 # pick one example for digit
 labels = []
 img_examples = []
 
 for key in sorted_images.keys():
-    print(f"============ Key: {key} =============")
-    print(len(sorted_images[key]))
     labels.append(key)
     img_examples.append(sorted_images[key][0])
-    print("----------------- Shape of the image -------------------")
-    print(sorted_images[key][0].shape)
 
 
 # Plot images
