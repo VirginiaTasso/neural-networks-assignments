@@ -1,6 +1,7 @@
 # --------- Importing useful libraries ---------
 
 import numpy as np
+import numpy.linalg as lg
 import matplotlib.pyplot as plt
 from sklearn.datasets import fetch_openml
 from sklearn.preprocessing import OneHotEncoder
@@ -86,7 +87,6 @@ for ax, img, label in zip(axes.ravel(), img_examples, labels):
 
 plt.show()
 
-
 # ========= Point b ========= #
 # --------- Define the random feature extractor ---------
 
@@ -108,10 +108,8 @@ for row in range(xrows.shape[0]):
     prod = np.matmul(M, np.transpose(xrow))
     X_matrix.append(prod)
 
-X_matrix = np.array(X_matrix)
-print("==== yrows ====")
-print(yrows[0:5,])
-
+X_matrix = np.array(X_matrix).reshape(d, 70000)
+print(f" ==== X_matrix shape: {X_matrix.shape} ====")
 
 # --------- Create Y_Matrix --------- #
 labels_enc = [[int(label)] for label in labels] 
@@ -135,11 +133,15 @@ for row in range(len(yrows)): # 70000
 
 Y_matrix = np.array(Y_matrix).reshape(10, 70000)
 
+print(f" ==== Y_matrix shape: {Y_matrix.shape} ====")
 
+# probelm to solve W = YX'(XX')^-1
+A = Y_matrix
+B = lg.pinv(X_matrix) # should give as output X'(XX')^-1
+W_vector = np.matmul(A,B)
 
-
-
-
+#print(f"==== The final Weight vector is : {W_vector.ravel()} ====")
+print(f"==== Final weight vector shape: {W_vector.shape} ====")
 # references
 '''
 https://scikit-learn.org/stable/auto_examples/classification/plot_digits_classification.html
@@ -154,6 +156,8 @@ https://www.geeksforgeeks.org/python-sort-python-dictionaries-by-key-or-value/
 
 
 https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.OneHotEncoder.html
+
+https://numpy.org/doc/stable/reference/generated/numpy.linalg.pinv.html#numpy.linalg.pinv
 
 '''
 
