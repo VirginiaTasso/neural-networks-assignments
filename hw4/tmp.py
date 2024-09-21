@@ -120,21 +120,10 @@ for d in d_list:
 for key, value in MSE.items():
     print(f"MSE with d = {key}: {value}")
 
-n_errors = 0
-
-'''for col in range(Y_matrix.shape[1]):
-    curr_true_val = Y_matrix[:,col]
-    predicted_val = y_pred[:,col]
-    print("==== Predicted Value ====")
-    print(predicted_val)
-    print(f"Argmax of TRUE VALUE: {np.argmax(curr_true_val)}")
-    print(f"Argmax of PREDICTED VALUE: {np.argmax(predicted_val)}")
-    if(np.argmax(curr_true_val) != np.argmax(predicted_val)):
-        n_errors += 1
-    print("==== Number of errors ====")
-    print(n_errors)'''
-
-
-
 n_errors = compute_n_mistakes(Y_matrix, y_pred)
 print(f"Number of errors: {n_errors}")
+
+
+print('Generation of a random digit')
+random_digit = np.random.randint(0, 9, 1)
+print(random_digit[0])

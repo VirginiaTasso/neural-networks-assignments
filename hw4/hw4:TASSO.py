@@ -34,6 +34,9 @@ def compute_n_mistakes(y, y_pred):
             n_errors += 1
     return n_errors
 
+def compute_n_mistakes_optimized(y, y_pred):
+    return np.sum(np.argmax(y, axis = 0) != np.argmax(y_pred, axis = 0))
+
 # ========= Point a ========= #
 # --------- Format correcly data and create images --------- #
 #  Load the full Dataset 
@@ -219,7 +222,44 @@ for (key_mse, value_mse), (key_err, value_err) in zip(mse.items(), n_errors.item
 
 
 # with increasing d the number of errors and the MSE reduce
+# d represents the number of features. the X matrix has 784 features with d = 1, but the number
+# can vary to dx784, depending on the value of d.
+# By multiplying X with M, which is a random matrix with uniformously distributed values,
+# the original images are projected in a new feature space.
+# The greater d, the more we are able to keep info from the original data.
+# A small value of d means that data are being compressed in a space with less features,
+# so there is the risk of losing information.
 
+# so it's quite reasonable that with a greater value of d, the number of errors diminishes,
+# because more features are being preserved
+
+# --------- Compare the number of obtainer errors to the number of errors I would obtaine my randomly selecting the digit ---------#
+
+n_random_errors = np.sum(np.argmax(Y_matrix, axis = 0) != np.random.randint(0,10,Y_matrix.shape[1]))
+
+
+print('='*20)
+print(f"Number of errors committed with random guessing of digits: {n_random_errors}")
+print('='*20)
+
+# ---------  Plot results --------- #
+
+_, axes = plt.subplots(nrows = 1, ncols = 2, figsize = (10, 3))
+
+axes[0].plot(d_list, [mse[d] for d in d_list], marker='o', color = 'b')
+axes[0].set_title('MSE for different values of d')
+axes[0].set_xlabel('d')
+axes[0].set_ylabel('MSE')
+axes[0].grid(True)
+
+axes[1].plot(d_list, [n_errors[d] for d in d_list], marker = 'o', color = 'r')
+axes[1].set_title("Number of errors for different values of d")
+axes[1].set_xlabel('d')
+axes[1].set_ylabel(r"$n_{errors}$")
+axes[1].grid(True)
+
+plt.tight_layout()
+plt.show()
 
 # references
 '''
