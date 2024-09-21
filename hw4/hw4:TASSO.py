@@ -8,6 +8,22 @@ from sklearn.preprocessing import OneHotEncoder
 import pandas as pd
 import time
 
+
+# ========= Define Useful Functions =========
+def compute_mse(y, y_pred):
+    """
+    Compute the Mean Square Error
+
+    :param y: ground truth label
+    :param y_pred: predicted value
+
+    :returns: the mean square error (:py:class:`~int`)
+    """
+     
+    return np.mean((y - y_pred)**2)
+
+
+
 # ========= Point a ========= #
 # --------- Format correcly data and create images --------- #
 #  Load the full Dataset 
@@ -131,7 +147,7 @@ for row in range(len(yrows)): # 70000
             lbl = encoded_labels[i]
             Y_matrix.append(lbl)
 
-Y_matrix = np.array(Y_matrix).reshape(10, 70000)
+Y_matrix = np.transpose(np.array(Y_matrix))
 
 print(f" ==== Y_matrix shape: {Y_matrix.shape} ====")
 
@@ -142,6 +158,58 @@ W_vector = np.matmul(A,B)
 
 #print(f"==== The final Weight vector is : {W_vector.ravel()} ====")
 print(f"==== Final weight vector shape: {W_vector.shape} ====")
+
+
+
+# ========= Point c ========= #
+d_list = [10, 50, 100, 200, 500]
+# create a dictionary to store the weight vectors  and mean squared errors for the different values of d
+W_vectors = {}
+MSE = {}
+# repeat previous process for all d's
+
+for d in d_list:
+    M = np.random.uniform(0, 1, size = (d, 784))
+    M /= (d*255)
+
+    # --------- Create X_matrix ---------- #
+
+    X_matrix = []
+    # iterate over rows
+
+    for row in range(xrows.shape[0]):
+
+        # select one row
+        xrow = xrows[row, :]
+        tmp = np.transpose(xrow)
+        prod = np.matmul(M, np.transpose(xrow))
+        X_matrix.append(prod)
+
+    X_matrix = np.transpose(np.array(X_matrix))
+    print(f" ==== X_matrix shape: {X_matrix.shape} ====")
+
+    # probelm to solve W = YX'(XX')^-1
+    A = Y_matrix
+    B = lg.pinv(X_matrix) # should give as output X'(XX')^-1
+    W_vector = np.matmul(A,B)
+    W_vectors[d] = W_vector
+
+    #print(f"==== The final Weight vector is : {W_vector.ravel()} ====")
+    print(f"==== Final weight vector shape: {W_vector.shape} ====")
+
+    # --------  Now make predictions --------- #
+
+    y_pred = np.matmul(W_vector, X_matrix)
+    mse = compute_mse(Y_matrix, y_pred)
+    MSE[d] = mse
+
+for key, value in MSE.items():
+    print(f"MSE with d = {key}: {value}")
+
+
+
+
+
 # references
 '''
 https://scikit-learn.org/stable/auto_examples/classification/plot_digits_classification.html
@@ -158,6 +226,8 @@ https://www.geeksforgeeks.org/python-sort-python-dictionaries-by-key-or-value/
 https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.OneHotEncoder.html
 
 https://numpy.org/doc/stable/reference/generated/numpy.linalg.pinv.html#numpy.linalg.pinv
+
+https://stackoverflow.com/questions/39064684/mean-squared-error-in-python
 
 '''
 
