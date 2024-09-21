@@ -22,7 +22,17 @@ def compute_mse(y, y_pred):
      
     return np.mean((y - y_pred)**2)
 
-
+def compute_n_mistakes(y, y_pred):
+    '''
+    Function to compute the number of errors when labels are one-hot encoded
+    '''
+    n_errors = 0
+    for col in range(y.shape[1]):
+        curr_true_val = y[:,col]
+        predicted_val = y_pred[:,col]
+        if(np.argmax(curr_true_val) != np.argmax(predicted_val)):
+            n_errors += 1
+    return n_errors
 
 # ========= Point a ========= #
 # --------- Format correcly data and create images --------- #
@@ -109,7 +119,6 @@ plt.show()
 d = 50
 M = np.random.uniform(0, 1, size = (d, 784))
 M /= (d*255)
-print(M)
 
 # --------- Create X_matrix ---------- #
 
@@ -124,7 +133,7 @@ for row in range(xrows.shape[0]):
     prod = np.matmul(M, np.transpose(xrow))
     X_matrix.append(prod)
 
-X_matrix = np.array(X_matrix).reshape(d, 70000)
+X_matrix = np.transpose(np.array(X_matrix))
 print(f" ==== X_matrix shape: {X_matrix.shape} ====")
 
 # --------- Create Y_Matrix --------- #
@@ -156,16 +165,12 @@ A = Y_matrix
 B = lg.pinv(X_matrix) # should give as output X'(XX')^-1
 W_vector = np.matmul(A,B)
 
-#print(f"==== The final Weight vector is : {W_vector.ravel()} ====")
-print(f"==== Final weight vector shape: {W_vector.shape} ====")
-
-
-
 # ========= Point c ========= #
 d_list = [10, 50, 100, 200, 500]
 # create a dictionary to store the weight vectors  and mean squared errors for the different values of d
 W_vectors = {}
-MSE = {}
+mse = {}
+n_errors = {}
 # repeat previous process for all d's
 
 for d in d_list:
@@ -186,7 +191,6 @@ for d in d_list:
         X_matrix.append(prod)
 
     X_matrix = np.transpose(np.array(X_matrix))
-    print(f" ==== X_matrix shape: {X_matrix.shape} ====")
 
     # probelm to solve W = YX'(XX')^-1
     A = Y_matrix
@@ -194,20 +198,27 @@ for d in d_list:
     W_vector = np.matmul(A,B)
     W_vectors[d] = W_vector
 
-    #print(f"==== The final Weight vector is : {W_vector.ravel()} ====")
-    print(f"==== Final weight vector shape: {W_vector.shape} ====")
-
     # --------  Now make predictions --------- #
 
     y_pred = np.matmul(W_vector, X_matrix)
-    mse = compute_mse(Y_matrix, y_pred)
-    MSE[d] = mse
 
-for key, value in MSE.items():
-    print(f"MSE with d = {key}: {value}")
+    # MSE for the different predictors
+    mse[d] = compute_mse(Y_matrix, y_pred)
+
+    # number of errors for the possible predictors
+    n_errors[d] = compute_n_mistakes(Y_matrix, y_pred)
 
 
+print(" ==== MSE and number of errors for the different predictors ==== ")
+for (key_mse, value_mse), (key_err, value_err) in zip(mse.items(), n_errors.items()):
+    print('='*20)
+    print(f"MSE with d = {key_mse}: {value_mse}")
+    print(f"Number of errors with d = {key_err}: {value_err}")
+    print('='*20)
+    print('\n\n')
 
+
+# with increasing d the number of errors and the MSE reduce
 
 
 # references
