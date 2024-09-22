@@ -10,6 +10,35 @@ import time
 
 
 # ========= Define Useful Functions =========
+
+def reduce_dim(xrows,input_feature_dimension, d):
+    '''
+    Function to reduce dimensionality of the input data
+    :param X: input data (dim: (num_data, input_feature_dimension) )
+    :param input_feature_dimension: original feature dimensionality
+    :param d: new dimensionality
+    :returns: data with reduced dimensionality
+    '''
+    M = np.random.uniform(0, 1, size = (d, input_feature_dimension))
+    M /= (d*255)
+
+    # --------- Create data with new dimensionality --------
+
+    xrows_reduced = []
+    # iterate over rows
+
+    for row in range(xrows.shape[0]):
+
+        # select one row
+        xrow = xrows[row, :]
+        tmp = np.transpose(xrow)
+        prod = np.matmul(M, np.transpose(xrow))
+        xrows_reduced.append(prod)
+
+    xrows_reduced = np.transpose(np.array(xrows_reduced))
+    return xrows_reduced
+
+
 def compute_mse(y, y_pred):
     """
     Compute the Mean Square Error
@@ -244,23 +273,49 @@ print('='*20)
 
 # ---------  Plot results --------- #
 
-_, axes = plt.subplots(nrows = 1, ncols = 2, figsize = (10, 3))
+_, axes = plt.subplots(nrows = 1, ncols = 2, figsize = (10, 5))
 
 axes[0].plot(d_list, [mse[d] for d in d_list], marker='o', color = 'b')
-axes[0].set_title('MSE for different values of d')
-axes[0].set_xlabel('d')
-axes[0].set_ylabel('MSE')
+axes[0].set_title('MSE for different values of d', fontsize = 22)
+axes[0].set_xlabel('d', fontsize = 20)
+axes[0].set_ylabel('MSE', fontsize = 20)
 axes[0].grid(True)
 
 axes[1].plot(d_list, [n_errors[d] for d in d_list], marker = 'o', color = 'r')
-axes[1].set_title("Number of errors for different values of d")
-axes[1].set_xlabel('d')
-axes[1].set_ylabel(r"$n_{errors}$")
+axes[1].set_title("Number of errors for different values of d", fontsize = 22)
+axes[1].set_xlabel('d', fontsize = 20)
+axes[1].set_ylabel(r"$n_{errors}$", fontsize = 20)
 axes[1].grid(True)
 
 plt.tight_layout()
-plt.show()
+plt.savefig('point2c.png')
+#plt.show()
 
+
+# ========= Point d ========= #
+# ---------  Implement the Widrow-Hoff LMS --------- #
+d = 100
+W = np.zeros((10, d))
+lr = 0.001
+n_epochs = 10
+X_matrix = reduce_dim(xrows, 784, d)
+mse = []
+n_errors = []
+for epoch in range(n_epochs):
+    # make prediction with current weights
+    y_pred = np.matmul(W, (X_matrix))
+    print(f"prediction shape: {y_pred.shape}")
+
+    # MSE for each epoch
+    mse.append(compute_mse(Y_matrix, y_pred))
+
+    # number of errors for each epoch
+    n_errors.append(compute_n_mistakes(Y_matrix, y_pred))
+
+    # update weights
+    W = W + lr* np.dot((Y_matrix - y_pred), np.transpose(X_matrix))
+
+print(f"Weight vector final shape: {W.shape}")
 # references
 '''
 https://scikit-learn.org/stable/auto_examples/classification/plot_digits_classification.html
