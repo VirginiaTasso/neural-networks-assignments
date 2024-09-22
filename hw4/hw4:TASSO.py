@@ -5,8 +5,8 @@ import numpy.linalg as lg
 import matplotlib.pyplot as plt
 from sklearn.datasets import fetch_openml
 from sklearn.preprocessing import OneHotEncoder
+import math
 import pandas as pd
-import time
 
 
 # ========= Define Useful Functions =========
@@ -31,7 +31,6 @@ def reduce_dim(xrows,input_feature_dimension, d):
 
         # select one row
         xrow = xrows[row, :]
-        tmp = np.transpose(xrow)
         prod = np.matmul(M, np.transpose(xrow))
         xrows_reduced.append(prod)
 
@@ -148,7 +147,8 @@ plt.show()
 # ========= Point b ========= #
 # --------- Define the random feature extractor ---------
 
-d = 50
+#d = 50
+d = 484
 M = np.random.uniform(0, 1, size = (d, 784))
 M /= (d*255)
 
@@ -161,15 +161,39 @@ for row in range(xrows.shape[0]):
 
     # select one row
     xrow = xrows[row, :]
-    tmp = np.transpose(xrow)
     prod = np.matmul(M, np.transpose(xrow))
     X_matrix.append(prod)
 
 X_matrix = np.transpose(np.array(X_matrix))
-print(f" ==== X_matrix shape: {X_matrix.shape} ====")
+print(f" ==== X_matrix shape: {X_matrix.shape} ====") # 70000, d
 
 # --------- Create Y_Matrix --------- #
 labels_enc = [[int(label)] for label in labels] 
+
+# check what happened to images
+
+images_reduced = []
+
+for i in range(X_matrix.shape[1]):
+    n1 = int(math.sqrt(d))
+    while d % n1 != 0:
+        n1 -= 1
+    n2 = d // n1
+    img = X_matrix[:, i].reshape(n1, n2) # select an entire row
+    images_reduced.append(img)
+
+
+
+_, axes = plt.subplots(nrows = 2, ncols = 5, figsize = (10,4))
+for ax, img in zip(axes.ravel(), images_reduced[:10]):
+    
+    ax.imshow(img, cmap = 'gray', interpolation = 'nearest')
+    ax.set_axis_off()
+    ax.set_title(f"Digit {label} reduced")
+
+plt.show()
+ 
+
 
 
 enc = OneHotEncoder(handle_unknown='ignore')
@@ -195,7 +219,7 @@ print(f" ==== Y_matrix shape: {Y_matrix.shape} ====")
 # probelm to solve W = YX'(XX')^-1
 A = Y_matrix
 B = lg.pinv(X_matrix) # should give as output X'(XX')^-1
-W_vector = np.matmul(A,B)
+W_vector = np.dot(A,B)
 
 # ========= Point c ========= #
 d_list = [10, 50, 100, 200, 500]
@@ -227,7 +251,7 @@ for d in d_list:
     # probelm to solve W = YX'(XX')^-1
     A = Y_matrix
     B = lg.pinv(X_matrix) # should give as output X'(XX')^-1
-    W_vector = np.matmul(A,B)
+    W_vector = np.dot(A,B)
     W_vectors[d] = W_vector
 
     # --------  Now make predictions --------- #
@@ -276,15 +300,15 @@ print('='*20)
 _, axes = plt.subplots(nrows = 1, ncols = 2, figsize = (10, 5))
 
 axes[0].plot(d_list, [mse[d] for d in d_list], marker='o', color = 'b')
-axes[0].set_title('MSE for different values of d', fontsize = 22)
-axes[0].set_xlabel('d', fontsize = 20)
-axes[0].set_ylabel('MSE', fontsize = 20)
+axes[0].set_title('MSE for different values of d', fontsize = 20)
+axes[0].set_xlabel('d', fontsize = 18)
+axes[0].set_ylabel('MSE', fontsize = 18)
 axes[0].grid(True)
 
 axes[1].plot(d_list, [n_errors[d] for d in d_list], marker = 'o', color = 'r')
-axes[1].set_title("Number of errors for different values of d", fontsize = 22)
-axes[1].set_xlabel('d', fontsize = 20)
-axes[1].set_ylabel(r"$n_{errors}$", fontsize = 20)
+axes[1].set_title("Number of errors for different values of d", fontsize = 20)
+axes[1].set_xlabel('d', fontsize = 18)
+axes[1].set_ylabel(r"$n_{errors}$", fontsize = 18)
 axes[1].grid(True)
 
 plt.tight_layout()
@@ -299,23 +323,123 @@ W = np.zeros((10, d))
 lr = 0.001
 n_epochs = 10
 X_matrix = reduce_dim(xrows, 784, d)
-mse = []
-n_errors = []
+print(f"X_matrix dimensions with fucntion: {X_matrix.shape}")
+mse_list = []
+n_errors_list = []
 for epoch in range(n_epochs):
-    # make prediction with current weights
-    y_pred = np.matmul(W, (X_matrix))
-    print(f"prediction shape: {y_pred.shape}")
+    for col in range(X_matrix.shape[1]): # iterate thorugh each sample
+        sample = X_matrix[:,col].reshape(-1,1) # select one sample
+        y_true = Y_matrix[:, col].reshape(-1,1)
+        # make prediction with current weights
+        y_pred_tmp = np.matmul(W, sample) # prediction on the current sample
 
+        error = y_true - y_pred_tmp
+
+        # update weights
+        W += lr * np.dot(error, np.transpose(sample))
+    
+    y_pred_total = np.matmul(W, X_matrix)
     # MSE for each epoch
-    mse.append(compute_mse(Y_matrix, y_pred))
+    mse = compute_mse(Y_matrix, y_pred_total)
+    mse_list.append(mse)
+    print('='*20)
+    print(f"Epoch n° {epoch + 1}: MSE: {mse}, " + r"$n_{errors}$" + f": {n_errors}")
 
     # number of errors for each epoch
-    n_errors.append(compute_n_mistakes(Y_matrix, y_pred))
+    n_errors = compute_n_mistakes(Y_matrix, y_pred_total)
+    n_errors_list.append(n_errors)
 
-    # update weights
-    W = W + lr* np.dot((Y_matrix - y_pred), np.transpose(X_matrix))
+# -------- Plot final results --------- #
 
-print(f"Weight vector final shape: {W.shape}")
+_, axes = plt.subplots(nrows = 1, ncols = 2, figsize = (10, 5))
+axes[0].plot(range(1, n_epochs +1), mse_list, linewidth = 1.5, marker = 'o', color = 'b')
+axes[0].set_title('MSE across epochs', fontsize = 20)
+axes[0].set_xlabel('Epochs', fontsize = 18)
+axes[0].set_ylabel('MSE', fontsize = 18)
+axes[0].grid(True)
+
+axes[1].plot(range(1, n_epochs +1), n_errors_list, linewidth = 1.5, marker = 'o', color = 'r')
+axes[1].set_title(r"$N_{errors}$ across epochs", fontsize = 20)
+axes[1].set_xlabel('Epochs', fontsize = 18)
+axes[1].set_ylabel(r'$n_{errors}$', fontsize = 18)
+axes[1].grid(True)
+
+plt.tight_layout()
+plt.savefig('pointd.png')
+
+
+print('='*20)
+print(f"Number of errors at the final epoch: {n_errors_list[-1]} ")
+print('='*20)
+print('\n\n')
+print('='*20)
+print(f"MSE at the last epoch; {mse_list[-1]}")
+print('='*20)
+
+
+# very bad result-> try smaller lr and more epoch
+
+d = 100
+W = np.zeros((10, d))
+lr = 0.0001
+n_epochs = 100
+X_matrix = reduce_dim(xrows, 784, d)
+mse_list = []
+n_errors_list = []
+for epoch in range(n_epochs):
+    for col in range(X_matrix.shape[1]): # iterate thorugh each sample
+        sample = X_matrix[:,col].reshape(-1,1) # select one sample
+        y_true = Y_matrix[:, col].reshape(-1,1)
+        # make prediction with current weights
+        y_pred_tmp = np.matmul(W, sample) # prediction on the current sample
+
+        error = y_true - y_pred_tmp
+
+        # update weights
+        W += lr * np.dot(error, np.transpose(sample))
+    
+    y_pred_total = np.matmul(W, X_matrix)
+    # MSE for each epoch
+    mse = compute_mse(Y_matrix, y_pred_total)
+    mse_list.append(mse)
+    print('='*20)
+    print(f"Epoch n° {epoch + 1}: MSE: {mse}\t Number of errors: {n_errors}")
+    print('='*20)
+    print('\n')
+
+    # number of errors for each epoch
+    n_errors = compute_n_mistakes(Y_matrix, y_pred_total)
+    n_errors_list.append(n_errors)
+
+# -------- Plot final results --------- #
+
+_, axes = plt.subplots(nrows = 1, ncols = 2, figsize = (10, 5))
+axes[0].plot(mse, linewidth = 1.5, marker = 'o', color = 'b')
+axes[0].set_title('MSE across epochs', fontsize = 20)
+axes[0].set_xlabel('Epochs', fontsize = 18)
+axes[0].set_ylabel('MSE', fontsize = 18)
+axes[0].grid(True)
+
+axes[1].plot(n_errors, linewidth = 1.5, marker = 'o', color = 'r')
+axes[1].set_title(r"$N_{errors}$ across epochs", fontsize = 20)
+axes[1].set_xlabel('Epochs', fontsize = 18)
+axes[1].set_ylabel(r'$n_{errors}$', fontsize = 18)
+axes[1].grid(True)
+
+plt.tight_layout()
+plt.savefig('pointd2.png')
+
+
+print('='*20)
+print(f"Number of errors at the final epoch: {n_errors_list[-1]} ")
+print('='*20)
+print('\n\n')
+print('='*20)
+print(f"MSE at the last epoch; {mse_list[-1]}")
+print('='*20)
+
+
+
 # references
 '''
 https://scikit-learn.org/stable/auto_examples/classification/plot_digits_classification.html
