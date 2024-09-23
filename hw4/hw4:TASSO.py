@@ -256,7 +256,7 @@ for d in d_list:
 
     # --------  Now make predictions --------- #
 
-    y_pred = np.matmul(W_vector, X_matrix)
+    y_pred = np.dot(W_vector, X_matrix)
 
     # MSE for the different predictors
     mse[d] = compute_mse(Y_matrix, y_pred)
@@ -272,19 +272,6 @@ for (key_mse, value_mse), (key_err, value_err) in zip(mse.items(), n_errors.item
     print(f"Number of errors with d = {key_err}: {value_err}")
     print('='*20)
     print('\n\n')
-
-
-# with increasing d the number of errors and the MSE reduce
-# d represents the number of features. the X matrix has 784 features with d = 1, but the number
-# can vary to dx784, depending on the value of d.
-# By multiplying X with M, which is a random matrix with uniformously distributed values,
-# the original images are projected in a new feature space.
-# The greater d, the more we are able to keep info from the original data.
-# A small value of d means that data are being compressed in a space with less features,
-# so there is the risk of losing information.
-
-# so it's quite reasonable that with a greater value of d, the number of errors diminishes,
-# because more features are being preserved
 
 # --------- Compare the number of obtainer errors to the number of errors I would obtaine my randomly selecting the digit ---------#
 
@@ -323,27 +310,27 @@ W = np.zeros((10, d))
 lr = 0.001
 n_epochs = 10
 X_matrix = reduce_dim(xrows, 784, d)
-print(f"X_matrix dimensions with fucntion: {X_matrix.shape}")
+print(f"X_matrix dimensions with function: {X_matrix.shape}")
 mse_list = []
 n_errors_list = []
 for epoch in range(n_epochs):
     for col in range(X_matrix.shape[1]): # iterate thorugh each sample
-        sample = X_matrix[:,col].reshape(-1,1) # select one sample
-        y_true = Y_matrix[:, col].reshape(-1,1)
+        sample = X_matrix[:,col].reshape(-1,1) # select one sample; dim (d, 1)
+        y_true = Y_matrix[:, col].reshape(-1,1) # reshape to obtain shape(10,1), otherwise it woudl be (10,)
         # make prediction with current weights
-        y_pred_tmp = np.matmul(W, sample) # prediction on the current sample
+        y_pred_sample = np.dot(W, sample) # prediction on the current sample dim (10, 1)
 
-        error = y_true - y_pred_tmp
+        error = y_true - y_pred_sample
 
         # update weights
         W += lr * np.dot(error, np.transpose(sample))
     
-    y_pred_total = np.matmul(W, X_matrix)
+    y_pred_total = np.dot(W, X_matrix)
     # MSE for each epoch
     mse = compute_mse(Y_matrix, y_pred_total)
     mse_list.append(mse)
     print('='*20)
-    print(f"Epoch n° {epoch + 1}: MSE: {mse}, " + r"$n_{errors}$" + f": {n_errors}")
+    print(f"Epoch n° {epoch + 1}: MSE: {mse}\t Number of errors: {n_errors}")
 
     # number of errors for each epoch
     n_errors = compute_n_mistakes(Y_matrix, y_pred_total)
@@ -391,14 +378,14 @@ for epoch in range(n_epochs):
         sample = X_matrix[:,col].reshape(-1,1) # select one sample
         y_true = Y_matrix[:, col].reshape(-1,1)
         # make prediction with current weights
-        y_pred_tmp = np.matmul(W, sample) # prediction on the current sample
+        y_pred_sample = np.dot(W, sample) # prediction on the current sample
 
-        error = y_true - y_pred_tmp
+        error = y_true - y_pred_sample
 
         # update weights
         W += lr * np.dot(error, np.transpose(sample))
     
-    y_pred_total = np.matmul(W, X_matrix)
+    y_pred_total = np.dot(W, X_matrix) # dim (10, 70000)
     # MSE for each epoch
     mse = compute_mse(Y_matrix, y_pred_total)
     mse_list.append(mse)
@@ -414,13 +401,13 @@ for epoch in range(n_epochs):
 # -------- Plot final results --------- #
 
 _, axes = plt.subplots(nrows = 1, ncols = 2, figsize = (10, 5))
-axes[0].plot(mse, linewidth = 1.5, marker = 'o', color = 'b')
+axes[0].plot(mse_list, linewidth = 1.5, marker = 'o', color = 'b')
 axes[0].set_title('MSE across epochs', fontsize = 20)
 axes[0].set_xlabel('Epochs', fontsize = 18)
 axes[0].set_ylabel('MSE', fontsize = 18)
 axes[0].grid(True)
 
-axes[1].plot(n_errors, linewidth = 1.5, marker = 'o', color = 'r')
+axes[1].plot(n_errors_list, linewidth = 1.5, marker = 'o', color = 'r')
 axes[1].set_title(r"$N_{errors}$ across epochs", fontsize = 20)
 axes[1].set_xlabel('Epochs', fontsize = 18)
 axes[1].set_ylabel(r'$n_{errors}$', fontsize = 18)
@@ -438,26 +425,4 @@ print('='*20)
 print(f"MSE at the last epoch; {mse_list[-1]}")
 print('='*20)
 
-
-
-# references
-'''
-https://scikit-learn.org/stable/auto_examples/classification/plot_digits_classification.html
-
-https://h1ros.github.io/posts/loading-scikit-learns-mnist-dataset/
-
-https://stackoverflow.com/questions/47324921/cant-load-mnist-original-dataset-using-sklearn
-
-https://www.geeksforgeeks.org/accessing-elements-of-a-pandas-series/
-
-https://www.geeksforgeeks.org/python-sort-python-dictionaries-by-key-or-value/
-
-
-https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.OneHotEncoder.html
-
-https://numpy.org/doc/stable/reference/generated/numpy.linalg.pinv.html#numpy.linalg.pinv
-
-https://stackoverflow.com/questions/39064684/mean-squared-error-in-python
-
-'''
 
