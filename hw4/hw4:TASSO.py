@@ -8,8 +8,9 @@ from sklearn.preprocessing import OneHotEncoder
 import math
 import pandas as pd
 
-
+# ============================================== #
 # ========= Define Useful Functions =========
+# ============================================== #
 
 def reduce_dim(xrows,input_feature_dimension, d):
     '''
@@ -22,7 +23,7 @@ def reduce_dim(xrows,input_feature_dimension, d):
     M = np.random.uniform(0, 1, size = (d, input_feature_dimension))
     M /= (d*255)
 
-    # --------- Create data with new dimensionality --------
+    # --------- Create data with new dimensionality -------- #
 
     xrows_reduced = []
     # iterate over rows
@@ -51,9 +52,14 @@ def compute_mse(y, y_pred):
     return np.mean((y - y_pred)**2)
 
 def compute_n_mistakes(y, y_pred):
-    '''
-    Function to compute the number of errors when labels are one-hot encoded
-    '''
+    """
+    Compute the number of classification errors when labels are one-hot encoded.
+
+    :param y: Ground truth labels, expected to be one-hot encoded (2D array).
+    :param y_pred: Predicted labels, also one-hot encoded (2D array).
+    
+    :returns: The number of misclassifications (integer).
+    """
     n_errors = 0
     for col in range(y.shape[1]):
         curr_true_val = y[:,col]
@@ -65,7 +71,16 @@ def compute_n_mistakes(y, y_pred):
 def compute_n_mistakes_optimized(y, y_pred):
     return np.sum(np.argmax(y, axis = 0) != np.argmax(y_pred, axis = 0))
 
-def build_image(mnist_dataset):
+def build_images(mnist_dataset):
+
+    """
+    Processes the MNIST dataset to build and organize images and labels.
+
+    :param mnist_dataset: A dataset object containing 'data' (pixel values) and 'target' (labels).
+    
+    :returns: A sorted dictionary of images (grouped by labels) and two numpy arrays: 
+              xrows (image data) and yrows (corresponding labels).
+    """
     
     # define xrow and yrow vectors
     xrows = []
@@ -120,14 +135,11 @@ mnist = fetch_openml('MNIST_784')
 images = {}
 j = 0
 
-
-
-
 # pick one example for digit
 labels = []
 img_examples = []
 
-images_dict, xrows, yrows = build_image(mnist)
+images_dict, xrows, yrows = build_images(mnist)
 
 for key in images_dict.keys():
     labels.append(key)
@@ -305,12 +317,15 @@ for epoch in range(n_epochs):
     # MSE for each epoch
     mse = compute_mse(Y_matrix, y_pred_total)
     mse_list.append(mse)
-    print('='*20)
-    print(f"Epoch n° {epoch + 1}: MSE: {mse}\t Number of errors: {n_errors}")
 
     # number of errors for each epoch
     n_errors = compute_n_mistakes(Y_matrix, y_pred_total)
     n_errors_list.append(n_errors)
+
+    print('='*20)
+    print(f"Epoch n° {epoch + 1}: MSE: {mse}\t Number of errors: {n_errors}")
+
+    
 
 # -------- Plot final results --------- #
 
@@ -331,128 +346,12 @@ plt.tight_layout()
 #plt.savefig('/pointd.png')
 plt.show()
 
-'''d = 100
-W = np.zeros((10, d))
-lr_list = [0.001, 0.005, 0.01]
-n_epochs = 10
-X_matrix = reduce_dim(xrows, 784, d)
-mse_dict = {}
-n_errors_dict = {}
-
-for lr in lr_list:
-    print(f"Trying with learning rate: {lr}")
-    mse_list = []
-    n_errors_list = []
-    for epoch in range(n_epochs):
-        for col in range(X_matrix.shape[1]): # iterate thorugh each sample
-            sample = X_matrix[:,col].reshape(-1,1) # select one sample
-            y_true = Y_matrix[:, col].reshape(-1,1)
-            # make prediction with current weights
-            y_pred_sample = np.dot(W, sample) # prediction on the current sample
-
-            error = y_true - y_pred_sample
-
-            # update weights
-            W += lr * np.dot(error, np.transpose(sample))
-        
-        y_pred_total = np.dot(W, X_matrix) # dim (10, 70000)
-        # MSE for each epoch
-        mse = compute_mse(Y_matrix, y_pred_total)
-        mse_list.append(mse)
-        print('='*20)
-        print(f"Epoch n° {epoch + 1}: MSE: {mse}\t Number of errors: {n_errors}")
-        print('='*20)
-        print('\n')
-
-        # number of errors for each epoch
-
-        n_errors = compute_n_mistakes(Y_matrix, y_pred_total)
-        n_errors_list.append(n_errors)
-    
-    # update dictionary
-
-    mse_dict[lr] = mse_list
-    n_errors_dict[lr] = n_errors_list
-
-# -------- Plot final results --------- #
-fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(12, 6))
-
-# Show MSE
-for lr, mse_vals in mse_dict.items():
-    axes[0].plot(mse_vals, linewidth=1.5, marker='o', label=f'lr={lr}')
-axes[0].set_title('MSE across epochs', fontsize=20)
-axes[0].set_xlabel('Epochs', fontsize=18)
-axes[0].set_ylabel('MSE', fontsize=18)
-axes[0].grid(True)
-axes[0].legend()  
-
-# Show n_errors
-for lr, n_errors_vals in n_errors_dict.items():
-    axes[1].plot(n_errors_vals, linewidth=1.5, marker='o', label=f'lr={lr}')
-axes[1].set_title(r"$N_{errors}$ across epochs", fontsize=20)
-axes[1].set_xlabel('Epochs', fontsize=18)
-axes[1].set_ylabel(r'$n_{errors}$', fontsize=18)
-axes[1].grid(True)
-axes[1].legend() 
-
-plt.tight_layout()
-plt.show()'''
-
-
-'''d = 100
-W = np.zeros((10, d))
-lr = 0.001
-n_epochs = 20
-X_matrix = reduce_dim(xrows, 784, d)
-print(f"X_matrix dimensions with function: {X_matrix.shape}")
-mse_list = []
-n_errors_list = []
-for epoch in range(n_epochs):
-    for col in range(X_matrix.shape[1]): # iterate thorugh each sample
-        sample = X_matrix[:,col].reshape(-1,1) # select one sample; dim (d, 1)
-        y_true = Y_matrix[:, col].reshape(-1,1) # reshape to obtain shape(10,1), otherwise it woudl be (10,)
-        # make prediction with current weights
-        y_pred_sample = np.dot(W, sample) # prediction on the current sample dim (10, 1)
-
-        error = y_true - y_pred_sample
-
-        # update weights
-        W += lr * np.dot(error, np.transpose(sample))
-    
-    y_pred_total = np.dot(W, X_matrix)
-    # MSE for each epoch
-    mse = compute_mse(Y_matrix, y_pred_total)
-    mse_list.append(mse)
-    print('='*20)
-    print(f"Epoch n° {epoch + 1}: MSE: {mse}\t Number of errors: {n_errors}")
-
-    # number of errors for each epoch
-    n_errors = compute_n_mistakes(Y_matrix, y_pred_total)
-    n_errors_list.append(n_errors)
-
-# -------- Plot final results --------- #
-
-_, axes = plt.subplots(nrows = 1, ncols = 2, figsize = (10, 5))
-axes[0].plot(range(1, n_epochs +1), mse_list, linewidth = 1.5, marker = 'o', color = 'b')
-axes[0].set_title('MSE across epochs', fontsize = 20)
-axes[0].set_xlabel('Epochs', fontsize = 18)
-axes[0].set_ylabel('MSE', fontsize = 18)
-axes[0].grid(True)
-
-axes[1].plot(range(1, n_epochs +1), n_errors_list, linewidth = 1.5, marker = 'o', color = 'r')
-axes[1].set_title(r"$N_{errors}$ across epochs", fontsize = 20)
-axes[1].set_xlabel('Epochs', fontsize = 18)
-axes[1].set_ylabel(r'$n_{errors}$', fontsize = 18)
-axes[1].grid(True)
-
-plt.tight_layout()
-#plt.savefig('/pointd.png')
-plt.show()'''
+# Another test -> more epochs and different learning parameters
 
 d = 100
 W = np.zeros((10, d))
 lr_list = [0.001, 0.005, 0.01]
-n_epochs = 20
+n_epochs = 10
 X_matrix = reduce_dim(xrows, 784, d)
 mse_dict = {}
 n_errors_dict = {}
