@@ -250,8 +250,7 @@ for epoch in range(epochs):
         b_new = gradient_descend(b, db, eta)
         c_new = gradient_descend(c, dc, eta)
 
-        print(f"Input: {inputs}")
-        print(f"Target: {target}")
+
 
         # 
         mse_epoch += compute_mse(target, f)
@@ -261,6 +260,7 @@ for epoch in range(epochs):
     mse_list.append(mse_epoch)
     print(f"Epoch {epoch+1}/{epochs}, MSE: {mse_epoch}")
 
+eps = 1e-6
 plt.figure(figsize = (10, 8))
 plt.plot(range(epochs), mse_list, linewidth = 1.5, c = 'b')
 plt.title('MSE over epochs', fontsize = 20)
@@ -270,4 +270,12 @@ plt.tick_params(axis='both', which='major', labelsize=14)
 plt.grid(True)
 plt.show()
 
-    
+plt.figure(figsize = (10, 8))
+plt.plot(range(5), mse_list[0:5], linewidth = 1.5, c = 'b')
+plt.title('MSE over epochs', fontsize = 20)
+plt.xlabel('Epochs', fontsize = 18)
+plt.ylabel('MSE', fontsize = 18)
+plt.tick_params(axis='both', which='major', labelsize=14)
+plt.xticks(range(5))
+plt.grid(True)
+plt.show()
