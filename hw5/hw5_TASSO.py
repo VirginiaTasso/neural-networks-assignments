@@ -306,17 +306,27 @@ plt.show()
 
 # --------- Compute and Plot the decision boundary ---------
 
-_, _, _, y_predicted = forward_pass(x, W_new, b_new, U_new, c_new)
+x1 = np.linspace(-2, 2, 100)
+x2 = np.linspace(-2, 2, 100)
+xx, yy = np.meshgrid(x1, x2)
+X_grid = np.c_[xx.ravel(), yy.ravel()]
 
-fig = plt.figure(figsize = (7, 10))
-ax = plt.axes(projection ="3d")
-ax.scatter3D(x[:, 0], x[:, 1], f, color = "green")
+# Compute the forward pass for the entire grid using the trained weights
+vz, z, vf, f = forward_pass(X_grid, W_new, b_new, U_new, c_new)
+
+# Reshape the outputs to match the grid
+f_reshaped = f.reshape(xx.shape)
+
+# Plot the decision boundary in 3D
+fig = plt.figure(figsize=(10, 8))
+ax = fig.add_subplot(111, projection='3d')
+ax.scatter(x[:, 0], x[:, 1], y, color='green', label='True Labels')
+ax.plot_surface(xx, yy, f_reshaped, cmap='viridis', alpha=0.5)
 ax.set_xlabel('x1')
 ax.set_ylabel('x2')
-ax.set_zlabel('x3')
-ax.zaxis._axinfo['juggled'] = (2, 2, 1)
+ax.set_zlabel('y')
+ax.set_title('3D Decision Boundary')
 plt.show()
-
 # ============================== #
 # ========= Point (2f) ========= #
 # ============================== #
