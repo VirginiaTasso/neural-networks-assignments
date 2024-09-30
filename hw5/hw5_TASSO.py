@@ -54,7 +54,7 @@ def sigmoid(f, a = 5):
     '''
     return 1 / (1 + np.exp(-a*f))
 
-def diff_sigmoid(f, a = 5):
+def diff_sigmoid(f, a):
     '''
     Derivative of the sigmoid function
     :param f: np.ndarray or float
@@ -64,7 +64,7 @@ def diff_sigmoid(f, a = 5):
     :return: np.ndarray or float
         The derivative of the sigmoid function with respect to the input `f`.
     '''
-    return a * sigmoid(f) * (1 - sigmoid(f))
+    return a * sigmoid(f, a) * (1 - sigmoid(f, a))
 
 def compute_vz(x, W, b):
     """
@@ -75,48 +75,61 @@ def compute_vz(x, W, b):
 def compute_vf(z, U, c):
     """
     Compute the local field of the second neuron
+    :param z: np.ndarray
+        The output of the hidden layer
+    :param U: np.ndarray
+        weight matrix of the ouput layer
+    :param c: np.ndarray
+        bias of the ouptut layer
     """
     return np.dot(U, z) + c
 
 
-def forward_pass(x, W, b, U, c):
+def forward_pass(x, W, b, U, c, a = 5):
+    """
+    Implements the forward pass of the learning algorithm
+    :param x: np.ndarray
+        input data
+    :param W: np.ndarray
+        weight matrix of the input layer
+    :param b: np.ndarray
+        biases of the input layer
+    :param U: np.ndarray
+        weight matrix of the hidden layer
+    :param c: np.ndarray
+        bias of the ouptut layer
+    :param a: int
+        regularization paramter of the sigmoid function
+    :return: np.ndarrays
+        returns outputs and hidden variables useful for the backward pass
+        
+    """
     vz = np.dot(W, x.T) + b  # (3, 2) * (2, 1) = 3, 1
-    print(f"vz shape: {vz.shape}")
 
-    z = sigmoid(vz) 
-    print(f"z shape: {z.shape}") # (3, 1)
+    z = sigmoid(vz, a)  # (3, 1)
 
-    vf = np.dot(U, z) + c  
-    print(f"vf shape: {vf.shape}")  # (1, 3) (3, 1) = (1, 1)
+    vf = np.dot(U, z) + c   # (1, 3) (3, 1) = (1, 1)
 
-    f = sigmoid(vf) 
-    print(f"f shape: {f.shape}") # (1, 1)
-
-    '''print('Forward')
-    print('='*20)
-    print(f"W shape {W.shape}")
-    print(f"Input shape: {x.shape}")
-    print(f"bias shape: {b.shape}")
-    print(f"Shape of vz (pre-activation hidden layer): {vz.shape}")
-    print(f"Shape of z (activation hidden layer): {z.shape}")
-    print(f"Shape of vf (pre-activation output layer): {vf.shape}")
-    print(f"Shape of f (final output): {f.shape}")'''
+    f = sigmoid(vf, a)  # (1, 1)
 
     return vz, z, vf, f
 
-def backward_pass(x,f, y, vf, z, vz, W, U):
+def backward_pass(x,f, y, vf, z, vz, W, U, a = 5):
+    """Implements the backward pass of the learning algorithm
+    All the deltas and useful elements for the gradients are computed
+    """
     # Backward Pass
     deltaf = 2 * (f - y) # (1, 1)
     print(f"Shape of deltaf: {deltaf.shape}")
 
     #deltavf = np.dot(deltaf, diff_sigmoid(vf))
-    deltavf = deltaf * diff_sigmoid(vf)  # (1,1) * (1, 1)
+    deltavf = deltaf * diff_sigmoid(vf, a)  # (1,1) * (1, 1)
     print(f"Shape of deltavf: {deltavf.shape}")
 
     deltaz = np.dot(deltavf, U) # (1, 1) * (1, 3) = (1, 3)
     print(f"Shape of deltaz: {deltaz.shape}")
 
-    deltavz = deltaz * diff_sigmoid(vz).T # (3, 1) (3, 1)
+    deltavz = deltaz * diff_sigmoid(vz, a).T # (3, 1) (3, 1)
     
     print(f"Shape of deltavz: {deltavz.shape}")
 
@@ -138,34 +151,6 @@ def backward_pass(x,f, y, vf, z, vz, W, U):
 
     return  deltaW, deltaU, deltab, deltac
 
-'''def backward_pass(x,f, y, vf, z, vz, W, U):
-    """
-    :param x: current input
-    :param f: output of the neural network
-    :param y: target value (the one to which the output should be as close as possible)
-    """
-    # compute all the errors
-
-    deltavf = diff_sigmoid(vf)*2*(f - y) # (1, 1) 
-
-    deltaz = np.dot(deltavf.T, U) # (1,1) * (1, 3) = (1, 3)
-    deltavz = diff_sigmoid(vz).T * deltaz  # (1, 3) 
-
-    print('Backward')
-    print('='*20)
-    print(f"U shape {U.shape}")
-    print(f"Shape of vz (pre-activation hidden layer): {vz.shape}")
-    print(f"Shape of z (activation hidden layer): {z.shape}")
-    print(f"Shape of vf (pre-activation output layer): {vf.shape}")
-    print(f"Shape of f (final output): {f.shape}")
-    
-    # compute gradients
-    deltaW = np.dot(deltavz.T, x) # (3, 1) * (1, 2) = (3, 2)
-    deltaU = np.dot(deltavf, z.T)  # (1, 1) * (1, 3) = (1, 3)
-    deltab = deltaz.T
-    deltac = deltavf
-
-    return deltaW, deltaU, deltab, deltac'''
 
 def compute_mse(y, y_pred):
     """
@@ -287,15 +272,9 @@ for epoch in range(epochs):
 
         vz, z, vf, f = forward_pass(inputs, W_new, b_new, U_new, c_new)
 
-
         # Backward Pass
 
         dW, dU, db, dc = backward_pass(inputs, f, target, vf, z, vz, W_new, U_new)
-
-        '''print(f"Shape of dW (gradient for W): {dW.shape}")
-        print(f"Shape of dU (gradient for U): {dU.shape}")
-        print(f"Shape of db (gradient for b): {db.shape}")
-        print(f"Shape of dc (gradient for c): {dc.shape}")'''
 
         # Gradient Descend
 
@@ -304,9 +283,6 @@ for epoch in range(epochs):
         b_new = gradient_descend(b_new, db, eta)
         c_new = gradient_descend(c_new, dc, eta)
 
-
-
-        # 
         mse_epoch += compute_mse(target, f)
     
     # at the end of each epoch compute mse
@@ -314,7 +290,7 @@ for epoch in range(epochs):
     mse_list.append(mse_epoch)
     print(f"Epoch {epoch+1}/{epochs}, MSE: {mse_epoch}")
 
-eps = 1e-6
+
 plt.figure(figsize = (10, 8))
 plt.plot(range(epochs), mse_list, linewidth = 1.5, c = 'b')
 plt.title('MSE over epochs', fontsize = 20)
@@ -324,19 +300,11 @@ plt.tick_params(axis='both', which='major', labelsize=14)
 plt.grid(True)
 plt.show()
 
-plt.figure(figsize = (10, 8))
-plt.plot(range(5), mse_list[0:5], linewidth = 1.5, c = 'b')
-plt.title('MSE over epochs', fontsize = 20)
-plt.xlabel('Epochs', fontsize = 18)
-plt.ylabel('MSE', fontsize = 18)
-plt.tick_params(axis='both', which='major', labelsize=14)
-plt.xticks(range(5))
-plt.grid(True)
-plt.show()
-
 # ================================ #
 # ========= Point (2d) ========= #
 # ================================ #
+
+# --------- Compute and Plot the decision boundary ---------
 
 _, _, _, y_predicted = forward_pass(x, W_new, b_new, U_new, c_new)
 
@@ -347,4 +315,108 @@ ax.set_xlabel('x1')
 ax.set_ylabel('x2')
 ax.set_zlabel('x3')
 ax.zaxis._axinfo['juggled'] = (2, 2, 1)
+plt.show()
+
+# ============================== #
+# ========= Point (2f) ========= #
+# ============================== #
+
+# ========= Try different strategies to improve the outcomr =========#
+
+# Initialize again weights
+
+x = np.random.uniform(-2, 2, size=(1000, 2))
+W = np.random.normal(mu,sigma, size = (3,2))
+U = np.random.normal(mu,sigma, size = (1,3))
+b = np.random.normal(mu,sigma, size = (3,1))
+c = np.random.normal(mu,sigma, size = (1,1 ))
+
+
+# set hyperparameters
+# Try a smaller eta
+eta = 0.001
+a_list = [7, 2]
+mse_dict = {} # dictionary to store mse for the 2 tests
+T = 5 # patient parameter
+W_new = W
+U_new = U
+b_new = b
+c_new = c
+count = 0 # variable to count for how much epochs in a row the error increases
+flag_1 = 0 # to check if T has been reached and learning rate reduced
+flag_2 = 0
+for test in range(len(a_list)):
+    print(f"===== Test n° {test} ====")
+    mse_list = [] # list to store the errors per epoch
+    if test == 1: eta = 0.0001 # decrease even more learning rate
+    a = a_list[test]
+    for epoch in range(epochs):
+        mse_epoch_old = mse_epoch # store previous value of the error
+        mse_epoch = 0 # reset
+
+        for i in range(x.shape[0]):
+            inputs = np.expand_dims(x[i, :], axis= 0) # (1, 2)
+            target = y[i]
+
+            # Forward Pass
+
+            vz, z, vf, f = forward_pass(inputs, W_new, b_new, U_new, c_new, a)
+
+            # Backward Pass
+
+            dW, dU, db, dc = backward_pass(inputs, f, target, vf, z, vz, W_new, U_new, a)
+
+            # Gradient Descend
+
+            W_new = gradient_descend(W_new, dW, eta) 
+            U_new = gradient_descend(U_new, dU, eta)
+            b_new = gradient_descend(b_new, db, eta)
+            c_new = gradient_descend(c_new, dc, eta)
+
+            mse_epoch += compute_mse(target, f)
+        
+        # at the end of each epoch compute mse
+        
+        mse_epoch /= x.shape[0]
+
+        if(mse_epoch > mse_epoch_old): count +=1
+        else: count = 0 # reset counter
+
+        if (count >= T): 
+            eta *=0.9 # if error does not improve, reduce learning rate
+            if test == 0: flag_1 = 1
+            else: flag_2 = 1
+            print(f"Error is not decreasing, reducing learning rate to {eta} ")
+        mse_list.append(mse_epoch)
+        print(f"Epoch {epoch+1}/{epochs}, MSE: {mse_epoch}")
+
+
+    mse_dict[test] = mse_list
+
+if flag_1:
+    print("Learning rate was reduced in test 1")
+elif flag_2:
+    print("Learning Rate was reduced in test 2")
+# ========= Plot Results ========= #
+plt.figure(figsize=(12, 6))  
+
+plt.subplot(1, 2, 1)
+plt.plot(range(epochs), mse_dict[0], linewidth=1.5, c='b')
+plt.title('MSE for Test 1, with 100 epochs and starting $\eta = 0.001$', fontsize=20)
+plt.xlabel('Epochs', fontsize=18)
+plt.ylabel('MSE', fontsize=18)
+plt.tick_params(axis='both', which='major', labelsize=14)
+plt.grid(True)
+
+
+plt.subplot(1, 2, 2)
+plt.plot(range(epochs), mse_dict[1], linewidth=1.5, c='r')
+plt.title('MSE for Test 2, with 150 epochs and starting $\eta = 0.0001 $', fontsize=20)
+plt.xlabel('Epochs', fontsize=18)
+plt.ylabel('MSE', fontsize=18)
+plt.tick_params(axis='both', which='major', labelsize=14)
+plt.grid(True)
+
+
+plt.tight_layout()  
 plt.show()
