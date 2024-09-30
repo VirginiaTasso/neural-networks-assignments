@@ -24,7 +24,7 @@ def compute_gradient(w1, w2):
     return np.array([dR_dw1, dR_dw2])
 
 
-def gradient_descend(weights, gradient, eta):
+def gradient_descend(weights, gradients, eta):
     '''
     Function to implement one step of gradient descend
     :param weights: np.ndarray
@@ -37,7 +37,7 @@ def gradient_descend(weights, gradient, eta):
     :return: np.ndarray
         The updated weights
     '''
-    return weights - eta * gradient
+    return weights - eta * gradients
     
 
 
@@ -64,13 +64,33 @@ def diff_sigmoid(f, a = 5):
     :return: np.ndarray or float
         The derivative of the sigmoid function with respect to the input `f`.
     '''
-    return (- np.exp(-a*f)) / (1 + np.exp(-a*f))**2
+    return a * sigmoid(f) * (1 - sigmoid(f))
+
+def compute_vz(x, W, b):
+    """
+    Compute the local field of the first neuron
+    """
+    return np.dot(W, x.T) + b
+
+def compute_vf(z, U, c):
+    """
+    Compute the local field of the second neuron
+    """
+    return np.dot(U, z) + c
+
 
 def forward_pass(x, W, b, U, c):
-    vz = np.dot(W, x.T) + b # (3, 1)
-    z = sigmoid(vz) # (3, 1)
-    vf = np.dot(U, z) + c.T # (1, 1)
-    f = sigmoid(vf)  # (1, 1)
+    vz = np.dot(W, x.T) + b  # (3, 2) * (2, 1) = 3, 1
+    print(f"vz shape: {vz.shape}")
+
+    z = sigmoid(vz) 
+    print(f"z shape: {z.shape}") # (3, 1)
+
+    vf = np.dot(U, z) + c  
+    print(f"vf shape: {vf.shape}")  # (1, 3) (3, 1) = (1, 1)
+
+    f = sigmoid(vf) 
+    print(f"f shape: {f.shape}") # (1, 1)
 
     '''print('Forward')
     print('='*20)
@@ -85,6 +105,40 @@ def forward_pass(x, W, b, U, c):
     return vz, z, vf, f
 
 def backward_pass(x,f, y, vf, z, vz, W, U):
+    # Backward Pass
+    deltaf = 2 * (f - y) # (1, 1)
+    print(f"Shape of deltaf: {deltaf.shape}")
+
+    #deltavf = np.dot(deltaf, diff_sigmoid(vf))
+    deltavf = deltaf * diff_sigmoid(vf)  # (1,1) * (1, 1)
+    print(f"Shape of deltavf: {deltavf.shape}")
+
+    deltaz = np.dot(deltavf, U) # (1, 1) * (1, 3) = (1, 3)
+    print(f"Shape of deltaz: {deltaz.shape}")
+
+    deltavz = deltaz * diff_sigmoid(vz).T # (3, 1) (3, 1)
+    
+    print(f"Shape of deltavz: {deltavz.shape}")
+
+    deltax = np.dot(deltavz, W)  # (3, 1)' * (3, 2) = (1, 3) * (3, 2) = (1, 2)
+    print(f"Shape of deltax: {deltax.shape}")
+
+    deltaW = np.dot(deltavz.T, x)  # (3, 1) * (1, 2)
+    print(f"Shape of deltaW: {deltaW.shape}")
+
+    deltaU = np.dot(deltavf, z.T) # (1, 1)  * (1, 3)
+    print(f"Shape of deltaU: {deltaU.shape}")
+
+    deltab = deltavz.T
+    print(f"Shape of deltab: {deltab.shape}")
+
+    deltac = deltaf 
+    print(f"Shape of deltac: {deltac.shape}")
+
+
+    return  deltaW, deltaU, deltab, deltac
+
+'''def backward_pass(x,f, y, vf, z, vz, W, U):
     """
     :param x: current input
     :param f: output of the neural network
@@ -97,13 +151,13 @@ def backward_pass(x,f, y, vf, z, vz, W, U):
     deltaz = np.dot(deltavf.T, U) # (1,1) * (1, 3) = (1, 3)
     deltavz = diff_sigmoid(vz).T * deltaz  # (1, 3) 
 
-    '''print('Backward')
+    print('Backward')
     print('='*20)
     print(f"U shape {U.shape}")
     print(f"Shape of vz (pre-activation hidden layer): {vz.shape}")
     print(f"Shape of z (activation hidden layer): {z.shape}")
     print(f"Shape of vf (pre-activation output layer): {vf.shape}")
-    print(f"Shape of f (final output): {f.shape}")'''
+    print(f"Shape of f (final output): {f.shape}")
     
     # compute gradients
     deltaW = np.dot(deltavz.T, x) # (3, 1) * (1, 2) = (3, 2)
@@ -111,7 +165,7 @@ def backward_pass(x,f, y, vf, z, vz, W, U):
     deltab = deltaz.T
     deltac = deltavf
 
-    return deltaW, deltaU, deltab, deltac
+    return deltaW, deltaU, deltab, deltac'''
 
 def compute_mse(y, y_pred):
     """
@@ -134,7 +188,7 @@ def compute_mse(y, y_pred):
 
 # fix a seed for reproducibility
 
-np.random.seed(11)
+np.random.seed(2)
 w1 = np.random.randint(1,2)
 w2 = np.random.randint(1,2)
 R = 13 * w1**2 - 10 * w1 * w2 + 4 * w1 + 2 * w2**2 - 2 * w2 + 1
@@ -245,10 +299,10 @@ for epoch in range(epochs):
 
         # Gradient Descend
 
-        W_new = gradient_descend(W, dW, eta)
-        U_new = gradient_descend(U, dU, eta)
-        b_new = gradient_descend(b, db, eta)
-        c_new = gradient_descend(c, dc, eta)
+        W_new = gradient_descend(W_new, dW, eta) 
+        U_new = gradient_descend(U_new, dU, eta)
+        b_new = gradient_descend(b_new, db, eta)
+        c_new = gradient_descend(c_new, dc, eta)
 
 
 
@@ -278,4 +332,19 @@ plt.ylabel('MSE', fontsize = 18)
 plt.tick_params(axis='both', which='major', labelsize=14)
 plt.xticks(range(5))
 plt.grid(True)
+plt.show()
+
+# ================================ #
+# ========= Point (2d) ========= #
+# ================================ #
+
+_, _, _, y_predicted = forward_pass(x, W_new, b_new, U_new, c_new)
+
+fig = plt.figure(figsize = (7, 10))
+ax = plt.axes(projection ="3d")
+ax.scatter3D(x[:, 0], x[:, 1], f, color = "green")
+ax.set_xlabel('x1')
+ax.set_ylabel('x2')
+ax.set_zlabel('x3')
+ax.zaxis._axinfo['juggled'] = (2, 2, 1)
 plt.show()
