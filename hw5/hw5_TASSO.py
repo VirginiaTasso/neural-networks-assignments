@@ -16,9 +16,9 @@ def compute_distance(x1, y1, x2, y2):
 
 
 def compute_gradient(w1, w2):
-    '''
+    """
     Function to compute the gradient of R(w1, w2)
-    '''
+    """
     dR_dw1 = 26 * w1 - 10 * w2 + 4
     dR_dw2 = -10 * w1 + 4 * w2 - 2
     return np.array([dR_dw1, dR_dw2])
