@@ -174,6 +174,77 @@ def draw_decision_boundary(inputs, pred_vect):
     # Show the plot
     plt.show()
 
+
+
+def train_model(epochs, eta, a, T=5, use_patience=False):
+    """
+    Trains the model with specified parameters.
+
+    Args:
+        epochs (int): Number of training epochs.
+        eta (float): Learning rate.
+        a (float): Specific model parameter (likely related to the activation function).
+        T (int, optional): Patience for learning rate reduction. Defaults to 5.
+        use_patience (bool, optional): Whether to use patience logic. Defaults to False.
+
+    Returns:
+        list: List of MSE values per epoch.
+        np.ndarray: Final model outputs.
+    """
+    mse_list = []
+    f_s = np.zeros((npoints, 1))
+    
+    # Initialize parameters by copying to avoid modifying the originals
+    W_new = W.copy()
+    U_new = U.copy()
+    b_new = b.copy()
+    c_new = c.copy()
+    
+    count = 0
+    mse_old = float('inf')
+    
+    for epoch in range(epochs):
+        mse_epoch = 0
+
+        for i in range(x.shape[0]):
+            inputs = np.expand_dims(x[i, :], axis=0)  # Shape: (1, 2)
+            target = y[i]
+
+            # Forward Pass
+            vz, z, vf, f = forward_pass(inputs, W_new, b_new, U_new, c_new, a)
+            f_s[i, 0] = f
+
+            # Backward Pass
+            dW, dU, db, dc = backward_pass(inputs, f, target, vf, z, vz, W_new, U_new, a)
+
+            # Gradient Descent
+            W_new = gradient_descend(W_new, dW, eta)
+            U_new = gradient_descend(U_new, dU, eta)
+            b_new = gradient_descend(b_new, db, eta)
+            c_new = gradient_descend(c_new, dc, eta)
+
+            mse_epoch += compute_mse(target, f)
+        
+        # Calculate average MSE for the epoch
+        mse_epoch /= x.shape[0]
+        mse_list.append(mse_epoch)
+        
+        # Patience logic for learning rate adjustment
+        if use_patience:
+            if mse_epoch > mse_old:
+                count += 1
+                if count >= T:
+                    print(f"No improvement detected. Reducing learning rate from {eta} to {eta * 0.9}")
+                    eta *= 0.9
+                    count = 0  # Reset counter after reducing learning rate
+            else:
+                count = 0  # Reset counter if there is improvement
+            mse_old = mse_epoch
+        
+        print(f"Epoch {epoch+1}/{epochs}, MSE: {mse_epoch:.6f}")
+    
+    return mse_list, f_s
+
 # ================================ #
 # ========= Point (1b) ========= #
 # ================================ #
@@ -333,267 +404,60 @@ draw_decision_boundary(x, f_s)
 
 # ========= Try different strategies to improve the outcomr =========#
 
-# decrease epochs, higher lr
-# set hyperparameters
-print("Test 1")
-print('='*20)
-epochs = 50
-eta = 0.1
-a = 5
-mse_list = []
-f_s= np.zeros((npoints, 1))
+# Define various hyperparameter sets for the tests
+test_strategies = [
+    {
+        'name': 'Test 1',
+        'epochs': 50,
+        'eta': 0.1,
+        'a': 5,
+        'use_patience': False
+    },
+    {
+        'name': 'Test 2',
+        'epochs': 500,
+        'eta': 0.001,
+        'a': 5,
+        'use_patience': False
+    },
+    {
+        'name': 'Test 3',
+        'epochs': 50,
+        'eta': 0.1,
+        'a': 5,
+        'use_patience': True
+    },
+    {
+        'name': 'Test 4',
+        'epochs': 500,
+        'eta': 0.001,
+        'a': 7,
+        'use_patience': True
+    }
+]
 
-
-W_new = W
-U_new = U
-b_new = b
-c_new = c
-for epoch in range(epochs):
-    mse_epoch = 0
-
-    for i in range(x.shape[0]):
-        inputs = np.expand_dims(x[i, :], axis= 0) # (1, 2)
-        target = y[i]
-
-        # Forward Pass
-
-        vz, z, vf, f = forward_pass(inputs, W_new, b_new, U_new, c_new, a)
-        f_s[i, 0] = f
-
-        # Backward Pass
-
-        dW, dU, db, dc = backward_pass(inputs, f, target, vf, z, vz, W_new, U_new, a)
-
-        # Gradient Descend
-
-        W_new = gradient_descend(W_new, dW, eta) 
-        U_new = gradient_descend(U_new, dU, eta)
-        b_new = gradient_descend(b_new, db, eta)
-        c_new = gradient_descend(c_new, dc, eta)
-
-        mse_epoch += compute_mse(target, f)
+# Execute each strategy
+for idx, params in enumerate(test_strategies, 1):
+    print(f"{params['name']}")
+    print('='*20)
     
-    # at the end of each epoch compute mse
-    mse_epoch /= x.shape[0]
-    mse_list.append(mse_epoch)
-    print(f"Epoch {epoch+1}/{epochs}, MSE: {mse_epoch}")
-
-
-plt.figure(figsize = (10, 8))
-plt.plot(range(epochs), mse_list, linewidth = 1.5, c = 'b')
-plt.title('MSE over epochs', fontsize = 20)
-plt.xlabel('Epochs', fontsize = 18)
-plt.ylabel('MSE', fontsize = 18)
-plt.tick_params(axis='both', which='major', labelsize=14)
-plt.grid(True)
-plt.show()
-
-
-# --------- Compute and Plot the decision boundary ---------
-
-draw_decision_boundary(x, f_s)
-
-
-
-# decrease epochs, higher lr
-# set hyperparameters
-print("Test 1")
-print('='*20)
-epochs = 500
-eta = 0.001
-a = 5
-mse_list = []
-f_s= np.zeros((npoints, 1))
-
-
-W_new = W
-U_new = U
-b_new = b
-c_new = c
-for epoch in range(epochs):
-    mse_epoch = 0
-
-    for i in range(x.shape[0]):
-        inputs = np.expand_dims(x[i, :], axis= 0) # (1, 2)
-        target = y[i]
-
-        # Forward Pass
-
-        vz, z, vf, f = forward_pass(inputs, W_new, b_new, U_new, c_new, a)
-        f_s[i, 0] = f
-
-        # Backward Pass
-
-        dW, dU, db, dc = backward_pass(inputs, f, target, vf, z, vz, W_new, U_new, a)
-
-        # Gradient Descend
-
-        W_new = gradient_descend(W_new, dW, eta) 
-        U_new = gradient_descend(U_new, dU, eta)
-        b_new = gradient_descend(b_new, db, eta)
-        c_new = gradient_descend(c_new, dc, eta)
-
-        mse_epoch += compute_mse(target, f)
+    mse_list, f_s = train_model(
+        epochs=params['epochs'],
+        eta=params['eta'],
+        a=params['a'],
+        T=5,
+        use_patience=params['use_patience']
+    )
     
-    # at the end of each epoch compute mse
-    mse_epoch /= x.shape[0]
-    mse_list.append(mse_epoch)
-    print(f"Epoch {epoch+1}/{epochs}, MSE: {mse_epoch}")
-
-
-plt.figure(figsize = (10, 8))
-plt.plot(range(epochs), mse_list, linewidth = 1.5, c = 'b')
-plt.title('MSE over epochs', fontsize = 20)
-plt.xlabel('Epochs', fontsize = 18)
-plt.ylabel('MSE', fontsize = 18)
-plt.tick_params(axis='both', which='major', labelsize=14)
-plt.grid(True)
-plt.show()
-
-
-# --------- Compute and Plot the decision boundary ---------
-
-draw_decision_boundary(x, f_s)
-
-
-# decrease epochs, higher lr, introduce patient
-# set hyperparameters
-print("Test 3")
-print('='*20)
-epochs = 50
-eta = 0.1
-a = 5
-mse_list = []
-f_s= np.zeros((npoints, 1))
-T = 5
-count = 0
-
-W_new = W
-U_new = U
-b_new = b
-c_new = c
-
-mse_old = float('inf') # initialize error
-for epoch in range(epochs):
-    mse_epoch = 0
-
-    for i in range(x.shape[0]):
-        inputs = np.expand_dims(x[i, :], axis= 0) # (1, 2)
-        target = y[i]
-
-        # Forward Pass
-
-        vz, z, vf, f = forward_pass(inputs, W_new, b_new, U_new, c_new, a)
-        f_s[i, 0] = f
-
-        # Backward Pass
-
-        dW, dU, db, dc = backward_pass(inputs, f, target, vf, z, vz, W_new, U_new, a)
-
-        # Gradient Descend
-
-        W_new = gradient_descend(W_new, dW, eta) 
-        U_new = gradient_descend(U_new, dU, eta)
-        b_new = gradient_descend(b_new, db, eta)
-        c_new = gradient_descend(c_new, dc, eta)
-
-        mse_epoch += compute_mse(target, f)
+    # Plot MSE over epochs
+    plt.figure(figsize=(10, 8))
+    plt.plot(range(1, params['epochs'] + 1), mse_list, linewidth=1.5, color='b')
+    plt.title(f'MSE over Epochs - {params["name"]}', fontsize=20)
+    plt.xlabel('Epochs', fontsize=18)
+    plt.ylabel('MSE', fontsize=18)
+    plt.tick_params(axis='both', which='major', labelsize=14)
+    plt.grid(True)
+    plt.show()
     
-    # at the end of each epoch compute mse
-    mse_epoch /= x.shape[0]
-    mse_list.append(mse_epoch)
-    if mse_epoch > mse_old:
-        count += 1
-    mse_old = mse_epoch
-
-    if count >= T:
-        print(f"Not improving: reducing learning rate to {eta*0.9}")
-        eta *= 0.9
-    print(f"Epoch {epoch+1}/{epochs}, MSE: {mse_epoch}")
-
-
-plt.figure(figsize = (10, 8))
-plt.plot(range(epochs), mse_list, linewidth = 1.5, c = 'b')
-plt.title('MSE over epochs', fontsize = 20)
-plt.xlabel('Epochs', fontsize = 18)
-plt.ylabel('MSE', fontsize = 18)
-plt.tick_params(axis='both', which='major', labelsize=14)
-plt.grid(True)
-plt.show()
-
-
-# --------- Compute and Plot the decision boundary ---------
-
-draw_decision_boundary(x, f_s)
-
-
-# more epochs, lower lr, introduce patient, change a to steeper value
-# set hyperparameters
-
-print("Test 4")
-print('='*20)
-epochs = 500
-eta = 0.001
-a = 7
-mse_list = []
-f_s= np.zeros((npoints, 1))
-T = 5
-count = 0
-
-W_new = W
-U_new = U
-b_new = b
-c_new = c
-
-mse_old = float('inf') # initialize error
-for epoch in range(epochs):
-    mse_epoch = 0
-
-    for i in range(x.shape[0]):
-        inputs = np.expand_dims(x[i, :], axis= 0) # (1, 2)
-        target = y[i]
-
-        # Forward Pass
-
-        vz, z, vf, f = forward_pass(inputs, W_new, b_new, U_new, c_new, a)
-        f_s[i, 0] = f
-
-        # Backward Pass
-
-        dW, dU, db, dc = backward_pass(inputs, f, target, vf, z, vz, W_new, U_new, a)
-
-        # Gradient Descend
-
-        W_new = gradient_descend(W_new, dW, eta) 
-        U_new = gradient_descend(U_new, dU, eta)
-        b_new = gradient_descend(b_new, db, eta)
-        c_new = gradient_descend(c_new, dc, eta)
-
-        mse_epoch += compute_mse(target, f)
-    
-    # at the end of each epoch compute mse
-    mse_epoch /= x.shape[0]
-    mse_list.append(mse_epoch)
-    if mse_epoch > mse_old:
-        count += 1
-    mse_old = mse_epoch
-
-    if count >= T:
-        print(f"Not improving: reducing learning rate to {eta*0.9}")
-        eta *= 0.9
-    print(f"Epoch {epoch+1}/{epochs}, MSE: {mse_epoch}")
-
-
-plt.figure(figsize = (10, 8))
-plt.plot(range(epochs), mse_list, linewidth = 1.5, c = 'b')
-plt.title('MSE over epochs', fontsize = 20)
-plt.xlabel('Epochs', fontsize = 18)
-plt.ylabel('MSE', fontsize = 18)
-plt.tick_params(axis='both', which='major', labelsize=14)
-plt.grid(True)
-plt.show()
-
-
-# --------- Compute and Plot the decision boundary ---------
-
-draw_decision_boundary(x, f_s)
+    # Compute and plot the decision boundary
+    draw_decision_boundary(x, f_s)
