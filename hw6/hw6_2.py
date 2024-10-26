@@ -16,11 +16,11 @@ class ConvNeuralNetwork(nn.Module):
         self.maxpool = nn.MaxPool2d(2, 2)
         self.flatten = nn.Flatten()
         self.activation = nn.ReLU()
-        
-  
+
+
         self.batchnorm_1 = nn.BatchNorm2d(20)
         self.batchnorm_2 = nn.BatchNorm2d(20)
-        
+
         self.linear1 = nn.Linear(20 * 5 * 5, 250)
         self.linear2 = nn.Linear(250, 10)
         self.dropout = nn.Dropout(0.2) # set p = 0 to remove dropout
@@ -34,7 +34,7 @@ class ConvNeuralNetwork(nn.Module):
         x = self.batchnorm_fc(self.linear1(x))  # (250, )
         x = self.activation(x)
         x = self.dropout(x)
-        
+
         # Final linear layer
         x = self.linear2(x)  # (10, )
         return x
@@ -54,16 +54,19 @@ param_grid = {
 
 
 def train(params):
+  """
+  Trains the model with the given hyperparameters and returns the accuracy.
+  """
+  # set hyperparameters
   model = ConvNeuralNetwork()
   model.to(device)
-  optimizer = torch.optim.SGD(model.parameters(), lr=params['learning_rate'])
+  optimizer = torch.optim.SGD(model.parameters(), lr=params['learning_rate'], weight_decay = 0.001)
   transform = transforms.Compose([transforms.ToTensor()])
   train_dataset = MNIST('./data', train=True, download=True, transform = transform)
   train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=params['batch_size'], shuffle=True)
   size = len(train_dataset)
   loss_fn = nn.CrossEntropyLoss()
 
-  # ========= Now Train the first Model ========= #
   # Training pipeline
   for epoch in range(params['epochs']):
     print(f"Epoch {epoch+1}\n-------------------------------")
@@ -71,16 +74,16 @@ def train(params):
     accuracy = 0.0
     for batch, (X, y) in enumerate(train_loader):
       model.train()
-      X, y = X.to(device), y.to(device)
+      X, y = X.to(device), y.to(device)                                         # forward pass
       y_pred = model(X)
       loss = loss_fn(y_pred, y)
       epoch_loss += loss.item()
       _, predicted = torch.max(y_pred.data, 1)
       accuracy += (predicted == y).sum().item()
-      
-      loss.backward()
-      optimizer.step()
-      optimizer.zero_grad()
+
+      loss.backward()                                                           # backward pass
+      optimizer.step()                                                          # gradient descent
+      optimizer.zero_grad()                                                     # zero out gradients
 
       if batch % 100 == 0:
               loss, current = loss.item(), (batch + 1) * len(X)
@@ -104,7 +107,7 @@ for params in product(*param_grid.values()): # test all possible combinations of
     if accuracy > best_accuracy:
         best_accuracy = accuracy
         best_params = params
-    
-    
+
+
 print("Best hyperparameters:", best_params)
 print("Best accuracy:", best_accuracy)
